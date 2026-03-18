@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
@@ -12,8 +12,23 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("CUSTOMER");
+  const [companyId, setCompanyId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [companies, setCompanies] = useState<{id: string, name: string | null, email: string | null}[]>([]);
+
+  useEffect(() => {
+    if (role === "TECHNICIAN") {
+      fetch("/api/public/companies")
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setCompanies(data);
+          }
+        })
+        .catch(err => console.error("Failed to load companies", err));
+    }
+  }, [role]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +39,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, companyId: role === "TECHNICIAN" ? companyId : undefined }),
       });
 
       if (res.ok) {
@@ -111,9 +126,35 @@ export default function RegisterPage() {
             >
               <option value="CUSTOMER">Zákazník</option>
               <option value="TECHNICIAN">Revizní technik</option>
+              <option value="COMPANY_ADMIN">Firma</option>
               <option value="ADMIN">Administrátor</option>
             </select>
           </div>
+
+          {role === "TECHNICIAN" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="overflow-hidden"
+            >
+              <label className="block text-sm font-medium text-gray-300 mb-1 mt-2">Připojit se k firmě (volitelné)</label>
+              <select
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                className="w-full bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-brand-yellow/50 transition-colors"
+              >
+                <option value="">-- Bez firmy --</option>
+                {companies.map(company => (
+                  <option key={company.id} value={company.id}>
+                    {company.name || company.email}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Pokud vyberete firmu, bude jí odeslána žádost o připojení.
+              </p>
+            </motion.div>
+          )}
 
           <button
             type="submit"

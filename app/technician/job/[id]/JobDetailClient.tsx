@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
+import { ChatSection } from '@/components/ChatSection';
+import { ChecklistSection } from '@/components/ChecklistSection';
 
 export default function JobDetailClient({ order, currentUser }: { order: any, currentUser: any }) {
   const [status, setStatus] = useState(
@@ -281,30 +283,7 @@ export default function JobDetailClient({ order, currentUser }: { order: any, cu
 
         {/* Sidebar Info */}
         <div className="space-y-6">
-            <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Checklist</h3>
-                <div className="space-y-3">
-                    {[
-                        { label: 'Vizuální prohlídka', done: true },
-                        { label: 'Měření impedance', done: true },
-                        { label: 'Měření izolačních odporů', done: true },
-                        { label: 'Test proudových chráničů', done: false },
-                        { label: 'Funkční zkouška', done: false },
-                    ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                            <div className={cn(
-                                "w-5 h-5 rounded-full flex items-center justify-center border",
-                                item.done ? "bg-green-500 border-green-500 text-black" : "border-gray-600"
-                            )}>
-                                {item.done && <CheckCircle2 className="w-3 h-3" />}
-                            </div>
-                            <span className={cn("text-sm", item.done ? "text-white line-through opacity-50" : "text-white")}>
-                                {item.label}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <ChecklistSection orderId={order.id} isTechnician={true} />
 
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
                 <div className="flex gap-3">
@@ -320,6 +299,8 @@ export default function JobDetailClient({ order, currentUser }: { order: any, cu
                     </div>
                 </div>
             </div>
+
+            <ChatSection orderId={order.id} currentUserId={currentUser.id} />
         </div>
       </div>
     </motion.div>

@@ -21,6 +21,9 @@ model User {
   companyId     String?
   company       User?     @relation("CompanyTechnicians", fields: [companyId], references: [id])
   technicians   User[]    @relation("CompanyTechnicians")
+  
+  inviteCode    String?   @unique
+  commissionRate Float?   @default(100) // Percentage of order price the technician gets
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -29,11 +32,14 @@ model User {
   companyOrders Order[]   @relation("CompanyOrders")
 
   roleRequests  RoleRequest[]
+  sentJoinRequests     CompanyJoinRequest[] @relation("TechnicianRequests")
+  receivedJoinRequests CompanyJoinRequest[] @relation("CompanyRequests")
   sentTransfers DocumentTransfer[] @relation("Sender")
   receivedTransfers DocumentTransfer[] @relation("Receiver")
   managedProducts Product[] @relation("ManagerProducts")
   sharedProducts  ProductShare[] @relation("CustomerShares")
   activityLogs    ActivityLog[]
+  messages        Message[]      @relation("UserMessages")
 }
 
 model RoleRequest {
@@ -44,6 +50,19 @@ model RoleRequest {
   status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model CompanyJoinRequest {
+  id           String   @id @default(cuid())
+  technicianId String
+  technician   User     @relation("TechnicianRequests", fields: [technicianId], references: [id], onDelete: Cascade)
+  companyId    String
+  company      User     @relation("CompanyRequests", fields: [companyId], references: [id], onDelete: Cascade)
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([technicianId, companyId])
 }
 
 model DocumentTransfer {
@@ -79,6 +98,9 @@ model Order {
   preferredDate DateTime? // Preferred date for the revision
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  checklists    ChecklistItem[]
+  messages      Message[]
 }
 
 model Product {
@@ -124,5 +146,25 @@ model ActivityLog {
   action      String   // e.g., "CREATED_ORDER", "ASSIGNED_TECHNICIAN", "UPDATED_ROLE"
   details     String?  // JSON string or text description
   targetId    String?  // ID of the affected resource (orderId, userId, etc.)
+  createdAt   DateTime @default(now())
+}
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  text        String
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User     @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
   createdAt   DateTime @default(now())
 }

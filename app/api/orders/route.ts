@@ -132,6 +132,9 @@ export async function POST(req: Request) {
       if (highestPriorityUser) {
         if (highestPriorityUser.role === 'TECHNICIAN') {
           orderData.technicianId = highestPriorityUser.id;
+          if (highestPriorityUser.companyId) {
+            orderData.companyId = highestPriorityUser.companyId;
+          }
         } else if (highestPriorityUser.role === 'COMPANY_ADMIN') {
           orderData.companyId = highestPriorityUser.id;
         }

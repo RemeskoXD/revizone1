@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, role, companyId } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -31,9 +31,22 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        role: role || "CUSTOMER"
+        role: role || "CUSTOMER",
+        // Generate a random invite code for companies
+        inviteCode: role === "COMPANY_ADMIN" ? Math.random().toString(36).substring(2, 8).toUpperCase() : null,
       }
     });
+
+    if (role === "TECHNICIAN" && companyId) {
+      // Create a join request
+      await prisma.companyJoinRequest.create({
+        data: {
+          technicianId: user.id,
+          companyId: companyId,
+          status: "PENDING"
+        }
+      });
+    }
 
     return NextResponse.json(
       { message: "Uživatel byl úspěšně zaregistrován", user: { id: user.id, email: user.email, role: user.role } },

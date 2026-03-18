@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { User as UserIcon, Mail, Phone, Briefcase, Plus, Copy, Check, Trash2 } from 'lucide-react';
-import { User, Order } from '@prisma/client';
+import { User as UserIcon, Mail, Phone, Briefcase, Plus, Copy, Check, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { User, Order, CompanyJoinRequest } from '@prisma/client';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 type TechnicianWithOrders = User & { assignedOrders: Order[] };
+type JoinRequestWithTech = CompanyJoinRequest & { technician: { id: string, name: string | null, email: string | null, phone: string | null } };
 
-export default function CompanyTechniciansClient({ technicians, companyCode }: { technicians: TechnicianWithOrders[], companyCode: string }) {
+export default function CompanyTechniciansClient({ technicians, joinRequests, companyCode }: { technicians: TechnicianWithOrders[], joinRequests: JoinRequestWithTech[], companyCode: string }) {
   const [copied, setCopied] = useState(false);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
+  const [isProcessingRequest, setIsProcessingRequest] = useState<string | null>(null);
   const router = useRouter();
 
   const handleCopyCode = () => {
@@ -46,8 +48,30 @@ export default function CompanyTechniciansClient({ technicians, companyCode }: {
     }
   };
 
+  const handleRequest = async (requestId: string, action: 'approve' | 'reject') => {
+    setIsProcessingRequest(requestId);
+    try {
+      const res = await fetch(`/api/company/requests/${requestId}/${action}`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        alert(`Žádost byla úspěšně ${action === 'approve' ? 'schválena' : 'zamítnuta'}.`);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Došlo k chybě při zpracování žádosti.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Došlo k chybě při zpracování žádosti.');
+    } finally {
+      setIsProcessingRequest(null);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Naši technici</h1>
@@ -67,6 +91,46 @@ export default function CompanyTechniciansClient({ technicians, companyCode }: {
           </div>
         </div>
       </div>
+
+      {/* Pending Join Requests */}
+      {joinRequests.length > 0 && (
+        <div className="bg-[#1A1A1A] border border-brand-yellow/30 rounded-xl overflow-hidden">
+          <div className="p-4 bg-brand-yellow/10 border-b border-brand-yellow/20">
+            <h2 className="text-lg font-bold text-brand-yellow flex items-center gap-2">
+              <UserIcon className="w-5 h-5" /> Čekající žádosti o připojení ({joinRequests.length})
+            </h2>
+          </div>
+          <div className="divide-y divide-white/5">
+            {joinRequests.map((req) => (
+              <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-white font-medium">{req.technician.name || 'Neznámý technik'}</h3>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
+                    <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {req.technician.email}</span>
+                    {req.technician.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {req.technician.phone}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleRequest(req.id, 'reject')}
+                    disabled={isProcessingRequest === req.id}
+                    className="px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <XCircle className="w-4 h-4" /> Zamítnout
+                  </button>
+                  <button
+                    onClick={() => handleRequest(req.id, 'approve')}
+                    disabled={isProcessingRequest === req.id}
+                    className="px-3 py-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Schválit
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Add Technician Card */}

@@ -11,6 +11,11 @@ export default async function CompanyTechniciansPage() {
     redirect('/login');
   }
 
+  const companyUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { inviteCode: true }
+  });
+
   const technicians = await prisma.user.findMany({
     where: {
       companyId: session.user.id,
@@ -24,5 +29,18 @@ export default async function CompanyTechniciansPage() {
     orderBy: { name: 'asc' }
   });
 
-  return <CompanyTechniciansClient technicians={technicians} companyCode={session.user.id} />;
+  const joinRequests = await prisma.companyJoinRequest.findMany({
+    where: {
+      companyId: session.user.id,
+      status: 'PENDING'
+    },
+    include: {
+      technician: {
+        select: { id: true, name: true, email: true, phone: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return <CompanyTechniciansClient technicians={technicians} joinRequests={joinRequests} companyCode={companyUser?.inviteCode || 'Nenastaveno'} />;
 }

@@ -21,19 +21,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Order } from '@prisma/client';
-
-// Mock data for chat
-const initialMessages = [
-  { id: 1, sender: 'system', text: 'Objednávka byla vytvořena.', time: '12. 10. 2024 09:00' },
-];
+import { ChatSection } from '@/components/ChatSection';
 
 export default function OrderDetailClient({ order, currentUser, technicians = [] }: { order: Order, currentUser: any, technicians?: any[] }) {
-  const [messages, setMessages] = useState(initialMessages);
-  const [newMessage, setNewMessage] = useState('');
   const [selectedTechId, setSelectedTechId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   const router = useRouter();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleAssign = async () => {
     if (!selectedTechId) return;
@@ -56,29 +49,6 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
     } finally {
       setIsAssigning(false);
     }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const msg = {
-      id: messages.length + 1,
-      sender: 'user',
-      text: newMessage,
-      time: new Date().toLocaleString('cs-CZ', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
-    };
-
-    setMessages([...messages, msg]);
-    setNewMessage('');
   };
 
   return (
@@ -280,66 +250,8 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
         </div>
 
         {/* Right Column: Chat */}
-        <div className="w-full lg:w-1/3 flex flex-col bg-[#1A1A1A] border border-white/5 rounded-xl overflow-hidden h-[600px] lg:h-auto">
-            <div className="p-4 border-b border-white/5 bg-[#1A1A1A] flex justify-between items-center">
-                <h3 className="font-semibold text-white flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-brand-yellow" /> Komunikace
-                </h3>
-                <span className="text-xs text-green-500 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span> Online
-                </span>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#111]">
-                {messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex flex-col max-w-[85%]", msg.sender === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
-                        {msg.sender === 'system' ? (
-                            <div className="w-full text-center my-2">
-                                <span className="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded-full">{msg.text}</span>
-                            </div>
-                        ) : (
-                            <>
-                                <div className={cn(
-                                    "p-3 rounded-xl text-sm",
-                                    msg.sender === 'user' 
-                                        ? "bg-brand-yellow text-black rounded-tr-none" 
-                                        : "bg-[#252525] text-white rounded-tl-none border border-white/5"
-                                )}>
-                                    {msg.sender === 'technician' && (
-                                        // @ts-ignore
-                                        <p className="text-xs font-bold mb-1 opacity-70">{msg.name}</p>
-                                    )}
-                                    <p>{msg.text}</p>
-                                </div>
-                                <span className="text-[10px] text-gray-600 mt-1 px-1">{msg.time}</span>
-                            </>
-                        )}
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
-
-            <div className="p-3 bg-[#1A1A1A] border-t border-white/5">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <button type="button" className="p-2 text-gray-400 hover:text-white transition-colors">
-                        <Paperclip className="w-5 h-5" />
-                    </button>
-                    <input 
-                        type="text" 
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Napište zprávu..." 
-                        className="flex-1 bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-yellow focus:outline-none"
-                    />
-                    <button 
-                        type="submit" 
-                        disabled={!newMessage.trim()}
-                        className="p-2 bg-brand-yellow text-black rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <Send className="w-5 h-5" />
-                    </button>
-                </form>
-            </div>
+        <div className="w-full lg:w-1/3 flex flex-col h-[600px] lg:h-auto">
+            <ChatSection orderId={order.id} currentUserId={currentUser.id} />
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
+import { ChatSection } from '@/components/ChatSection';
 
 export default function CompanyOrderDetailClient({ order, currentUser, technicians }: { order: any, currentUser: any, technicians: any[] }) {
   const [status, setStatus] = useState(
@@ -192,6 +193,13 @@ export default function CompanyOrderDetailClient({ order, currentUser, technicia
                       {isAssigning ? 'Přiřazuji...' : 'Přiřadit zakázku'}
                     </button>
                   </form>
+              </div>
+            )}
+
+            {/* Chat Section */}
+            {!canClaim && (
+              <div className="h-[500px]">
+                <ChatSection orderId={order.id} currentUserId={currentUser.id} />
               </div>
             )}
         </div>

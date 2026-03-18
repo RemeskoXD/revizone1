@@ -1,8 +1,11 @@
 'use client';
 
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, User } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 export function TechnicianHeader() {
+  const { data: session } = useSession();
+
   return (
     <header className="h-16 border-b border-white/10 bg-[#111111] flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1">
@@ -20,7 +23,7 @@ export function TechnicianHeader() {
 
         <div className="flex items-center gap-3 pl-2">
             <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">Ing. Petr Svoboda</p>
+                <p className="text-sm font-medium text-white">{session?.user?.name || 'Technik'}</p>
                 <p className="text-xs text-gray-500">Revizní technik</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center border border-white/10">

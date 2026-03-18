@@ -67,29 +67,31 @@ export default function TechnicianDashboardClient({ user, newRequestsCount, open
                   <p className="text-gray-500 text-sm">Zatím nemáte žádné aktivní zakázky.</p>
                 ) : (
                   todaysJobs.map((job: any, index: number) => (
-                      <motion.div 
-                          key={job.id} 
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.1 }}
-                          className="flex gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
-                      >
-                          <div className="flex flex-col items-center">
-                              <span className="text-sm font-mono text-brand-yellow">-</span>
-                              <div className="h-full w-px bg-white/10 my-2"></div>
-                          </div>
-                          <div>
-                              <h4 className="font-medium text-white">{job.serviceType}</h4>
-                              <div className="flex items-center gap-1 text-sm text-gray-400 mt-1">
-                                  <MapPin className="w-3 h-3" /> {job.address}
-                              </div>
-                          </div>
-                          <div className="ml-auto">
-                              <span className="text-xs font-medium px-2 py-1 rounded bg-white/10 text-gray-300">
-                                {job.status === 'IN_PROGRESS' ? 'Probíhá' : 'Čeká'}
-                              </span>
-                          </div>
-                      </motion.div>
+                      <Link href={`/technician/job/${job.readableId}`} key={job.id} className="block">
+                        <motion.div 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2, delay: index * 0.1 }}
+                            className="flex gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+                        >
+                            <div className="flex flex-col items-center">
+                                <span className="text-sm font-mono text-brand-yellow">-</span>
+                                <div className="h-full w-px bg-white/10 my-2"></div>
+                            </div>
+                            <div>
+                                <h4 className="font-medium text-white">{job.serviceType}</h4>
+                                <div className="flex items-center gap-1 text-sm text-gray-400 mt-1">
+                                    <MapPin className="w-3 h-3" /> {job.address}
+                                </div>
+                            </div>
+                            <div className="ml-auto flex flex-col items-end justify-center">
+                                <span className="text-xs font-medium px-2 py-1 rounded bg-white/10 text-gray-300">
+                                  {job.status === 'IN_PROGRESS' ? 'Probíhá' : 'Čeká'}
+                                </span>
+                                <span className="text-xs text-brand-yellow mt-2 hover:underline">Detail</span>
+                            </div>
+                        </motion.div>
+                      </Link>
                   ))
                 )}
             </div>

@@ -113,6 +113,7 @@ export default function SettingsClient({ user }: { user: User }) {
             { id: 'notifications', label: 'Upozornění', icon: Bell },
             ...(user.role === 'CUSTOMER' ? [{ id: 'role', label: 'Změna role', icon: Briefcase }] : []),
             ...(user.role === 'TECHNICIAN' ? [{ id: 'company', label: 'Připojit k firmě', icon: Building }] : []),
+            ...(user.role === 'COMPANY_ADMIN' ? [{ id: 'company_settings', label: 'Nastavení firmy', icon: Building }] : []),
           ].map((item) => (
             <button
               key={item.id}
@@ -208,6 +209,58 @@ export default function SettingsClient({ user }: { user: User }) {
                     {isLoading ? 'Odesílám...' : 'Odeslat žádost'}
                   </button>
                 </form>
+              </motion.div>
+            ) : activeTab === 'company_settings' && user.role === 'COMPANY_ADMIN' ? (
+              <motion.div 
+                key="company_settings"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <h3 className="text-lg font-medium text-white mb-4">Nastavení firmy</h3>
+                <p className="text-sm text-gray-400 mb-6">
+                  Zde můžete spravovat identifikační kód vaší firmy. Technici tento kód potřebují, aby se mohli připojit k vaší firmě.
+                </p>
+                
+                <div className="space-y-4 max-w-md">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-400">Kód firmy (Invite Code)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={(user as any).inviteCode || 'Nenastaveno'}
+                        readOnly
+                        className="flex-1 bg-[#111] border border-white/10 rounded-lg p-2.5 text-white outline-none font-mono"
+                      />
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm('Opravdu chcete vygenerovat nový kód? Starý kód přestane fungovat.')) return;
+                          setIsLoading(true);
+                          try {
+                            const res = await fetch('/api/company/settings/generate-code', { method: 'POST' });
+                            if (res.ok) {
+                              alert('Nový kód byl úspěšně vygenerován.');
+                              router.refresh();
+                            } else {
+                              alert('Došlo k chybě při generování kódu.');
+                            }
+                          } catch (e) {
+                            alert('Došlo k chybě při generování kódu.');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        disabled={isLoading}
+                        className="px-4 py-2.5 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
+                      >
+                        Vygenerovat nový
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             ) : (
               <motion.form 
