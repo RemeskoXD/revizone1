@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  phone         String?
+  role          String    @default("CUSTOMER") // CUSTOMER, TECHNICIAN, COMPANY_ADMIN, REALTY, ADMIN
+  priority      Int       @default(0) // Higher number = higher priority for order assignment
+  
+  // For Technicians belonging to a Company
+  companyId     String?
+  company       User?     @relation("CompanyTechnicians", fields: [companyId], references: [id])
+  technicians   User[]    @relation("CompanyTechnicians")
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]   @relation("CustomerOrders")
+  assignedOrders Order[]  @relation("TechnicianOrders")
+  companyOrders Order[]   @relation("CompanyOrders")
+
+  roleRequests  RoleRequest[]
+  sentTransfers DocumentTransfer[] @relation("Sender")
+  receivedTransfers DocumentTransfer[] @relation("Receiver")
+  managedProducts Product[] @relation("ManagerProducts")
+  sharedProducts  ProductShare[] @relation("CustomerShares")
+  activityLogs    ActivityLog[]
+}
+
+model RoleRequest {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  requestedRole String   // TECHNICIAN, COMPANY_ADMIN, REALTY
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DocumentTransfer {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("Sender", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+  documentId  String   // Reference to the document/order being transferred
+  status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id            String    @id @default(cuid())
+  readableId    String    @unique // e.g., ORD-2023-156
+  customerId    String
+  customer      User      @relation("CustomerOrders", fields: [customerId], references: [id])
+  technicianId  String?
+  technician    User?     @relation("TechnicianOrders", fields: [technicianId], references: [id])
+  companyId     String?
+  company       User?     @relation("CompanyOrders", fields: [companyId], references: [id])
+  serviceType   String
+  propertyType  String
+  address       String
+  notes         String?
+  status        String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  assignedAt    DateTime? // When it was assigned to tech/company (for the 1-day rule)
+  isPublic      Boolean   @default(false) // If true, available to all (after 1 day expires)
+  reportFile    String?   // Base64 encoded PDF or URL
+  price         Float?    // Expected price for the order
+  preferredDate DateTime? // Preferred date for the revision
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?
+  description String?
+  managerId   String
+  manager     User     @relation("ManagerProducts", fields: [managerId], references: [id])
+  documents   ProductDocument[]
+  shares      ProductShare[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductDocument {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String
+  fileUrl     String   // Base64 or URL
+  fileType    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductShare {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    User     @relation("CustomerShares", fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productId, customerId])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String   // e.g., "CREATED_ORDER", "ASSIGNED_TECHNICIAN", "UPDATED_ROLE"
+  details     String?  // JSON string or text description
+  targetId    String?  // ID of the affected resource (orderId, userId, etc.)
+  createdAt   DateTime @default(now())
+}

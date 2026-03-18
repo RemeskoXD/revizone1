@@ -1,0 +1,57 @@
+import Link from 'next/link';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, ShieldAlert, BarChart3, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const navigation = [
+  { name: 'Přehled', href: '/admin', icon: LayoutDashboard },
+  { name: 'Objednávky', href: '/admin/orders', icon: FileText },
+  { name: 'Uživatelé', href: '/admin/users', icon: Users },
+  { name: 'Historie', href: '/admin/history', icon: Activity },
+  { name: 'Analytika', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Nastavení', href: '/admin/settings', icon: Settings },
+];
+
+export function AdminSidebar() {
+  return (
+    <div className="flex h-full w-64 flex-col bg-[#111] border-r border-white/10">
+      <div className="flex h-16 items-center px-6 border-b border-white/10">
+        <Link href="/admin" className="flex items-center gap-2">
+           <div className="relative flex items-center justify-center w-8 h-8 bg-red-600 rounded-md">
+              <ShieldAlert className="w-5 h-5 text-white" />
+           </div>
+           <span className="text-xl font-bold text-white tracking-tight">REVIZONE APLIKACE</span>
+        </Link>
+      </div>
+
+      <div className="flex-1 flex flex-col gap-1 px-3 py-6">
+        <div className="space-y-1">
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Správa</p>
+            {navigation.map((item) => (
+            <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                "text-gray-400 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <item.icon className="w-5 h-5 group-hover:text-red-500 transition-colors" />
+                {item.name}
+            </Link>
+            ))}
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-white/10">
+        <div className="px-3 py-2 mb-2 bg-white/5 rounded-lg border border-white/5">
+            <p className="text-xs text-gray-500">Verze systému</p>
+            <p className="text-xs font-mono text-white">v1.0.0-beta</p>
+        </div>
+        <Link href="/" className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+          <LogOut className="w-5 h-5" />
+          Odhlásit se
+        </Link>
+      </div>
+    </div>
+  );
+}
