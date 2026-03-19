@@ -22,6 +22,8 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Order } from '@prisma/client';
 import { ChatSection } from '@/components/ChatSection';
+import { ReviewSection } from '@/components/ReviewSection';
+import { PhotoSection } from '@/components/PhotoSection';
 import { getTipsForService } from '@/lib/preparationTips';
 
 export default function OrderDetailClient({ order, currentUser, technicians = [] }: { order: Order, currentUser: any, technicians?: any[] }) {
@@ -357,9 +359,16 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
           </div>
         </div>
 
-        {/* Right Column: Chat */}
-        <div className="w-full lg:w-1/3 flex flex-col h-[600px] lg:h-auto">
+        {/* Right Column: Chat + Review */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6 h-[600px] lg:h-auto">
             <ChatSection orderId={order.id} currentUserId={currentUser.id} />
+            <PhotoSection orderId={order.id} isTechnician={false} />
+            <ReviewSection 
+              orderReadableId={order.readableId} 
+              isCustomer={order.customerId === currentUser.id}
+              orderStatus={order.status}
+              hasTechnician={!!order.technicianId}
+            />
         </div>
       </div>
     </div>

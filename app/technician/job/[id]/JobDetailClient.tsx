@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ChatSection } from '@/components/ChatSection';
 import { ChecklistSection } from '@/components/ChecklistSection';
+import { PhotoSection } from '@/components/PhotoSection';
 
 export default function JobDetailClient({ order, currentUser, addressHistory = [] }: { order: any, currentUser: any, addressHistory?: any[] }) {
   const router = useRouter();
@@ -446,6 +447,8 @@ export default function JobDetailClient({ order, currentUser, addressHistory = [
           </div>
 
           <ChecklistSection orderId={order.id} isTechnician={true} />
+
+          <PhotoSection orderId={order.id} isTechnician={isAssigned} />
 
           {/* Address History */}
           {addressHistory.length > 0 && (

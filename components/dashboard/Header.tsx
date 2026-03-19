@@ -1,8 +1,9 @@
-import { Bell, Search, User, Menu } from 'lucide-react';
+import { Search, User, Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: 'Zákazník',
@@ -58,29 +59,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative">
-            <button 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
-            >
-                <Bell className="w-5 h-5" />
-            </button>
-
-            {showNotifications && (
-                <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                    <div className="absolute right-0 mt-2 w-80 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-4 border-b border-white/5">
-                            <h3 className="font-semibold text-white">Upozornění</h3>
-                        </div>
-                        <div className="p-8 text-center">
-                            <Bell className="w-8 h-8 text-gray-600 mx-auto mb-3" />
-                            <p className="text-sm text-gray-500">Žádná nová upozornění</p>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
+        <NotificationBell />
         
         <div className="h-8 w-[1px] bg-white/10 mx-1"></div>
 

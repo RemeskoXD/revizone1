@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { notifyOrderCompleted, notifyDefectCreated } from '@/lib/notifications';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -70,6 +71,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           priority: revisionResult === 'FAIL' ? 'HIGH' : 'MEDIUM',
         },
       });
+    }
+
+    await notifyOrderCompleted(order.id, order.readableId, order.customerId, revisionResult || 'PASS');
+    
+    if (revisionResult === 'FAIL' || revisionResult === 'PASS_WITH_NOTES') {
+      await notifyDefectCreated(order.customerId, order.readableId);
     }
 
     return NextResponse.json(updatedOrder, { status: 200 });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { notifyScheduleSet } from '@/lib/notifications';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -42,6 +43,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       where: { id: order.id },
       data: updateData,
     });
+
+    if (scheduledDate && order.customerId) {
+      const dateStr = new Date(scheduledDate).toLocaleString('cs-CZ');
+      await notifyScheduleSet(order.readableId, order.customerId, dateStr);
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

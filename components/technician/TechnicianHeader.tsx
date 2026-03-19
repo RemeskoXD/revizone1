@@ -1,7 +1,8 @@
 'use client';
 
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export function TechnicianHeader() {
   const { data: session } = useSession();
@@ -10,15 +11,11 @@ export function TechnicianHeader() {
     <header className="h-16 border-b border-white/10 bg-[#111111] flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1">
         <span className="md:hidden font-bold text-white tracking-tight mr-2">REVIZONE APLIKACE</span>
-        <h2 className="text-sm font-mono text-gray-500">PARTNER PORTAL v1.0</h2>
+        <h2 className="text-sm font-mono text-gray-500">PARTNER PORTAL</h2>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative">
-          <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-            <Bell className="w-5 h-5" />
-          </button>
-        </div>
+        <NotificationBell />
         
         <div className="h-8 w-[1px] bg-white/10 mx-1"></div>
 
