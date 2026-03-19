@@ -24,6 +24,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Uživatel nenalezen");
         }
 
+        if (user.isDeleted) {
+          throw new Error("Účet byl deaktivován");
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordValid) {

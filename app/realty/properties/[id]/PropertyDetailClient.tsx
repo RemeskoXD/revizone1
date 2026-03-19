@@ -304,9 +304,14 @@ export default function PropertyDetailClient({ property }: { property: Property 
                   onChange={e => setNewOrder({ ...newOrder, serviceType: e.target.value })}
                   className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition-all"
                 >
-                  <option value="Revize oken">Revize oken</option>
-                  <option value="Revize dveří">Revize dveří</option>
-                  <option value="Komplexní kontrola">Komplexní kontrola</option>
+                  <option value="Elektroinstalace - Byt">Elektroinstalace - Byt</option>
+                  <option value="Elektroinstalace - Dům">Elektroinstalace - Dům</option>
+                  <option value="Plynové zařízení">Plynové zařízení</option>
+                  <option value="Hromosvod">Hromosvod</option>
+                  <option value="Komíny">Komíny</option>
+                  <option value="Hasicí přístroje">Hasicí přístroje</option>
+                  <option value="Tlaková zařízení">Tlaková zařízení</option>
+                  <option value="Komplexní revize">Komplexní revize</option>
                 </select>
               </div>
               <div>

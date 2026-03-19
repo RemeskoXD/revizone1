@@ -1,25 +1,31 @@
 import { prisma } from '@/lib/prisma';
 
-export async function checkAndReleaseExpiredOrders() {
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
+async function getPublicTimeoutHours(): Promise<number> {
   try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'public_timeout_hours' } });
+    return config ? parseInt(config.value, 10) || 24 : 24;
+  } catch {
+    return 24;
+  }
+}
+
+export async function checkAndReleaseExpiredOrders() {
+  try {
+    const timeoutHours = await getPublicTimeoutHours();
+    const cutoff = new Date(Date.now() - timeoutHours * 60 * 60 * 1000);
+
     const expiredOrders = await prisma.order.findMany({
       where: {
         status: 'PENDING',
-        assignedAt: {
-          lt: oneDayAgo,
-        },
+        isDeleted: false,
+        assignedAt: { lt: cutoff },
         isPublic: false,
       },
     });
 
     if (expiredOrders.length > 0) {
       await prisma.order.updateMany({
-        where: {
-          id: { in: expiredOrders.map(o => o.id) },
-        },
+        where: { id: { in: expiredOrders.map(o => o.id) } },
         data: {
           technicianId: null,
           companyId: null,
@@ -27,7 +33,6 @@ export async function checkAndReleaseExpiredOrders() {
           assignedAt: null,
         },
       });
-      console.log(`Released ${expiredOrders.length} expired orders to public.`);
     }
   } catch (error) {
     console.error('Error checking expired orders:', error);

@@ -1,145 +1,168 @@
 'use client';
 
-import { StatCard } from '@/components/dashboard/StatCard';
-import { ClipboardList, CheckCircle2, DollarSign, MapPin, Calendar, ArrowRight } from 'lucide-react';
+import { 
+  ClipboardList, CheckCircle2, DollarSign, MapPin, Calendar, 
+  ArrowRight, Phone, Navigation, Clock, Briefcase, TrendingUp,
+  ChevronRight
+} from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { AnimatedItem } from '@/components/AnimatedItem';
+import { cn } from '@/lib/utils';
 
-export default function TechnicianDashboardClient({ user, newRequestsCount, openJobsCount, completedJobsCount, expectedEarnings, newRequests, todaysJobs }: any) {
+export default function TechnicianDashboardClient({ 
+  user, openJobsCount, completedTotal, monthlyEarnings, monthlyCount, 
+  pendingEarnings, publicQueue, publicQueueCount, todaysJobs 
+}: any) {
+
+  const statusLabel = (s: string) => ({
+    'IN_PROGRESS': 'Probíhá', 'NEEDS_REVISION': 'K přepracování', 'PENDING': 'Čeká',
+  }[s] || s);
+
+  const statusColor = (s: string) => ({
+    'IN_PROGRESS': 'bg-blue-500/10 text-blue-500',
+    'NEEDS_REVISION': 'bg-orange-500/10 text-orange-500',
+  }[s] || 'bg-yellow-500/10 text-yellow-500');
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 className="text-2xl font-bold text-white">Vítejte, {user?.name?.split(' ')[0] || 'Techniku'} ⚡</h1>
-            <p className="text-gray-400 mt-1">Máte <span className="text-brand-yellow font-bold">{newRequestsCount} nové zakázky</span> čekající na potvrzení.</p>
+          <h1 className="text-2xl font-bold text-white">Ahoj, {user?.name?.split(' ')[0] || 'Techniku'} ⚡</h1>
+          <p className="text-gray-400 mt-1">
+            {openJobsCount > 0 
+              ? <>{openJobsCount} {openJobsCount === 1 ? 'zakázka čeká' : 'zakázek čeká'} na vyřízení</>
+              : 'Žádné aktivní zakázky'}
+            {publicQueueCount > 0 && <> · <span className="text-brand-yellow">{publicQueueCount} nových poptávek</span></>}
+          </p>
         </div>
-        <div className="flex gap-3">
-            <Link href="/technician/queue" className="px-4 py-2 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors flex items-center gap-2">
-                <ClipboardList className="w-4 h-4" /> Přejít na zakázky
-            </Link>
-        </div>
+        <Link href="/technician/queue" className="px-4 py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors flex items-center gap-2">
+          <ClipboardList className="w-4 h-4" /> Všechny zakázky
+        </Link>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats - 4 compact cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <AnimatedItem delay={0.1}>
-          <StatCard 
-              title="Otevřené zakázky" 
-              value={openJobsCount.toString()} 
-              description="Vyžadují akci"
-              icon={ClipboardList}
-              alert={openJobsCount > 0}
-              href="/technician/queue"
-          />
+          <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-4">
+            <ClipboardList className="w-4 h-4 text-brand-yellow mb-2" />
+            <p className="text-2xl font-bold text-white">{openJobsCount}</p>
+            <p className="text-xs text-gray-500">Otevřené</p>
+          </div>
+        </AnimatedItem>
+        <AnimatedItem delay={0.15}>
+          <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-4">
+            <CheckCircle2 className="w-4 h-4 text-green-500 mb-2" />
+            <p className="text-2xl font-bold text-white">{completedTotal}</p>
+            <p className="text-xs text-gray-500">Dokončeno celkem</p>
+          </div>
         </AnimatedItem>
         <AnimatedItem delay={0.2}>
-          <StatCard 
-              title="Dokončeno celkem" 
-              value={completedJobsCount.toString()} 
-              description="Vaše úspěšné revize"
-              icon={CheckCircle2}
-              trendUp={true}
-              href="/technician/queue"
-          />
+          <div className="bg-[#1A1A1A] border border-brand-yellow/20 rounded-xl p-4">
+            <DollarSign className="w-4 h-4 text-brand-yellow mb-2" />
+            <p className="text-2xl font-bold text-brand-yellow">{monthlyEarnings.toLocaleString('cs-CZ')} Kč</p>
+            <p className="text-xs text-gray-500">Tento měsíc ({monthlyCount} revizí)</p>
+          </div>
         </AnimatedItem>
-        <AnimatedItem delay={0.3}>
-          <StatCard 
-              title="Očekávaný výdělek" 
-              value={`${expectedEarnings.toLocaleString('cs-CZ')} Kč`} 
-              description="Z aktivních zakázek"
-              icon={DollarSign}
-              href="/technician/queue"
-          />
+        <AnimatedItem delay={0.25}>
+          <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-4">
+            <TrendingUp className="w-4 h-4 text-blue-500 mb-2" />
+            <p className="text-2xl font-bold text-white">{pendingEarnings.toLocaleString('cs-CZ')} Kč</p>
+            <p className="text-xs text-gray-500">Čeká na dokončení</p>
+          </div>
         </AnimatedItem>
       </div>
 
-      {/* Active Jobs Map/List Placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Today's Schedule */}
-        <AnimatedItem delay={0.4} className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-brand-yellow" /> Vaše zakázky
-            </h3>
-            <div className="space-y-4">
-                {todaysJobs.length === 0 ? (
-                  <p className="text-gray-500 text-sm">Zatím nemáte žádné aktivní zakázky.</p>
-                ) : (
-                  todaysJobs.map((job: any, index: number) => (
-                      <Link href={`/technician/job/${job.readableId}`} key={job.id} className="block">
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2, delay: index * 0.1 }}
-                            className="flex gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
-                        >
-                            <div className="flex flex-col items-center">
-                                <span className="text-sm font-mono text-brand-yellow">-</span>
-                                <div className="h-full w-px bg-white/10 my-2"></div>
-                            </div>
-                            <div>
-                                <h4 className="font-medium text-white">{job.serviceType}</h4>
-                                <div className="flex items-center gap-1 text-sm text-gray-400 mt-1">
-                                    <MapPin className="w-3 h-3" /> {job.address}
-                                </div>
-                            </div>
-                            <div className="ml-auto flex flex-col items-end justify-center">
-                                <span className={`text-xs font-medium px-2 py-1 rounded ${
-                                  job.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
-                                  job.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
-                                  'bg-white/10 text-gray-300'
-                                }`}>
-                                  {job.status === 'IN_PROGRESS' ? 'Probíhá' : 
-                                   job.status === 'NEEDS_REVISION' ? 'K přepracování' : 'Čeká'}
-                                </span>
-                                <span className="text-xs text-brand-yellow mt-2 hover:underline">Detail</span>
-                            </div>
-                        </motion.div>
-                      </Link>
-                  ))
-                )}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Today's Jobs - takes more space */}
+        <AnimatedItem delay={0.3} className="lg:col-span-3">
+          <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-5 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-brand-yellow" /> Moje zakázky
+              </h3>
+              <Link href="/technician/queue" className="text-xs text-brand-yellow hover:underline">Vše →</Link>
             </div>
+            <div className="space-y-2">
+              {todaysJobs.length === 0 ? (
+                <p className="text-gray-500 text-sm py-4">Žádné aktivní zakázky.</p>
+              ) : (
+                todaysJobs.map((job: any, index: number) => (
+                  <motion.div 
+                    key={job.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                  >
+                    <Link href={`/technician/job/${job.readableId}`} className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors group">
+                      <div className={cn("w-1.5 h-8 rounded-full shrink-0",
+                        job.status === 'IN_PROGRESS' ? "bg-blue-500" :
+                        job.status === 'NEEDS_REVISION' ? "bg-orange-500" : "bg-yellow-500"
+                      )} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">{job.serviceType}</span>
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", statusColor(job.status))}>{statusLabel(job.status)}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-xs text-gray-500 truncate"><MapPin className="w-3 h-3 inline" /> {job.address}</span>
+                          {job.scheduledDate && (
+                            <span className="text-xs text-brand-yellow shrink-0"><Clock className="w-3 h-3 inline" /> {new Date(job.scheduledDate).toLocaleString('cs-CZ', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {job.customer?.phone && (
+                          <a href={`tel:${job.customer.phone}`} onClick={(e) => e.stopPropagation()} className="p-1.5 text-gray-500 hover:text-green-500 hover:bg-green-500/10 rounded-lg transition-colors" title="Zavolat">
+                            <Phone className="w-4 h-4" />
+                          </a>
+                        )}
+                        <a href={`https://maps.google.com/?q=${encodeURIComponent(job.confirmedAddress || job.address)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-1.5 text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors" title="Navigovat">
+                          <Navigation className="w-4 h-4" />
+                        </a>
+                        <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white transition-colors" />
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
         </AnimatedItem>
 
-        {/* New Requests */}
-        <AnimatedItem delay={0.5} className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6">
+        {/* Public Queue */}
+        <AnimatedItem delay={0.4} className="lg:col-span-2">
+          <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-5 h-full">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Nové poptávky</h3>
-                <span className="text-xs bg-brand-yellow text-black font-bold px-2 py-1 rounded-full">{newRequestsCount}</span>
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-brand-yellow" /> Volné poptávky
+              </h3>
+              {publicQueueCount > 0 && <span className="text-xs bg-brand-yellow text-black font-bold px-2 py-0.5 rounded-full">{publicQueueCount}</span>}
             </div>
-            <div className="space-y-3">
-                {newRequests.length === 0 ? (
-                  <p className="text-gray-500 text-sm">Zatím nejsou žádné nové poptávky.</p>
-                ) : (
-                  newRequests.map((req: any, index: number) => (
-                      <motion.div 
-                          key={req.id} 
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.1 }}
-                          className="flex items-center justify-between p-4 bg-[#111] rounded-lg border border-white/5"
-                      >
-                          <div>
-                              <div className="flex items-center gap-2">
-                                  <span className="text-xs font-mono text-gray-500">#{req.readableId}</span>
-                                  <span className="text-sm font-medium text-white">{req.serviceType}</span>
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">{req.address}</p>
-                          </div>
-                          <div className="text-right">
-                              <p className="text-sm font-bold text-brand-yellow">{req.price ? `${req.price.toLocaleString('cs-CZ')} Kč` : 'Dle dohody'}</p>
-                              <Link href={`/technician/job/${req.readableId}`} className="text-xs text-white hover:underline mt-1 inline-block">Detail</Link>
-                          </div>
-                      </motion.div>
-                  ))
-                )}
-                {newRequestsCount > 3 && (
-                  <Link href="/technician/queue" className="block text-center w-full py-2 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 rounded-lg hover:bg-white/5 transition-colors mt-2">
-                      Zobrazit další poptávky
-                  </Link>
-                )}
+            <div className="space-y-2">
+              {publicQueue.length === 0 ? (
+                <p className="text-gray-500 text-sm py-4">Žádné nové poptávky.</p>
+              ) : (
+                publicQueue.map((req: any, index: number) => (
+                  <motion.div 
+                    key={req.id}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                  >
+                    <Link href={`/technician/job/${req.readableId}`} className="block p-3 bg-[#111] rounded-lg border border-white/5 hover:border-brand-yellow/30 transition-all group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-white group-hover:text-brand-yellow transition-colors">{req.serviceType}</span>
+                        <span className="text-xs font-bold text-brand-yellow">{req.price ? `${req.price.toLocaleString('cs-CZ')} Kč` : '–'}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 truncate"><MapPin className="w-3 h-3 inline" /> {req.address}</p>
+                    </Link>
+                  </motion.div>
+                ))
+              )}
             </div>
+          </div>
         </AnimatedItem>
       </div>
     </div>

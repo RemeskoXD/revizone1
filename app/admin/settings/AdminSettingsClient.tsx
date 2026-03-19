@@ -5,13 +5,36 @@ import { Save, Settings, Shield, Mail, User, Link as LinkIcon, Check, X, Copy, U
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 
-export default function AdminSettingsClient({ user, teamMembers }: { user: any, teamMembers: any[] }) {
+export default function AdminSettingsClient({ user, teamMembers, systemConfig = {} }: { user: any, teamMembers: any[], systemConfig?: Record<string, string> }) {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // System config state
+  const [configValues, setConfigValues] = useState({
+    public_timeout_hours: systemConfig['public_timeout_hours'] || '24',
+    global_banner: systemConfig['global_banner'] || '',
+    global_banner_type: systemConfig['global_banner_type'] || 'info',
+    default_revision_months: systemConfig['default_revision_months'] || '36',
+  });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  const handleSaveConfig = async () => {
+    setIsSavingConfig(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configValues),
+      });
+      if (res.ok) alert('Nastavení platformy uloženo.');
+      else alert('Chyba při ukládání.');
+    } catch { alert('Chyba.'); }
+    finally { setIsSavingConfig(false); }
+  };
   const [isGenerating, setIsGenerating] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [copied, setCopied] = useState(false);
@@ -199,6 +222,60 @@ export default function AdminSettingsClient({ user, teamMembers }: { user: any, 
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Platform Control Panel */}
+      <div className="bg-[#1A1A1A] border border-white/5 rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-white/5 flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
+            <Settings className="w-5 h-5 text-red-500" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Řízení platformy</h2>
+            <p className="text-sm text-gray-400">Globální nastavení systému bez nutnosti nového nasazení.</p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-400">Doba do zveřejnění zakázky (hodiny)</label>
+              <input type="number" min="1" max="168" value={configValues.public_timeout_hours} onChange={(e) => setConfigValues({ ...configValues, public_timeout_hours: e.target.value })} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+              <p className="text-xs text-gray-500">Nepřiřazená zakázka spadne do veřejné fronty po tomto čase.</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-400">Výchozí platnost revize (měsíce)</label>
+              <input type="number" min="1" max="120" value={configValues.default_revision_months} onChange={(e) => setConfigValues({ ...configValues, default_revision_months: e.target.value })} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+              <p className="text-xs text-gray-500">Použije se pokud objednávka nemá přiřazenou revizní kategorii.</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-400">Globální upozornění (banner pro všechny uživatele)</label>
+            <textarea value={configValues.global_banner} onChange={(e) => setConfigValues({ ...configValues, global_banner: e.target.value })} rows={2} placeholder='Např. "V pátek 20.10. bude probíhat údržba systému." Nechte prázdné pro skrytí.' className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none resize-none" />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-400">Typ banneru</label>
+            <div className="flex gap-3">
+              {[
+                { value: 'info', label: 'Informace', color: 'border-blue-500/30 text-blue-500' },
+                { value: 'warning', label: 'Varování', color: 'border-orange-500/30 text-orange-500' },
+                { value: 'error', label: 'Kritické', color: 'border-red-500/30 text-red-500' },
+              ].map((opt) => (
+                <button key={opt.value} type="button" onClick={() => setConfigValues({ ...configValues, global_banner_type: opt.value })} className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${opt.color} ${configValues.global_banner_type === opt.value ? 'bg-white/10' : 'bg-transparent opacity-50'}`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-white/5 flex justify-end">
+            <button onClick={handleSaveConfig} disabled={isSavingConfig} className="flex items-center gap-2 px-6 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50">
+              <Save className="w-4 h-4" /> {isSavingConfig ? 'Ukládám...' : 'Uložit nastavení platformy'}
+            </button>
+          </div>
         </div>
       </div>
 

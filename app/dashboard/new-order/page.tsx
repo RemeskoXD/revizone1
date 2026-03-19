@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,6 +33,12 @@ export default function NewOrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [reportFile, setReportFile] = useState<string | null>(null);
+  const [revisionCategories, setRevisionCategories] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+
+  useEffect(() => {
+    fetch('/api/revisions').then(r => r.json()).then(setRevisionCategories).catch(() => {});
+  }, []);
 
   const { register, handleSubmit, watch, formState: { errors }, trigger } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
@@ -83,6 +89,7 @@ export default function NewOrderPage() {
           notes: data.notes,
           preferredDate: data.preferredDate,
           reportFile: data.serviceType === 'vlastni_revize' ? reportFile : null,
+          revisionCategoryId: selectedCategoryId || null,
         }),
       });
 
@@ -323,19 +330,34 @@ export default function NewOrderPage() {
                     />
                   </div>
 
-                  <div className="bg-brand-yellow/5 border border-brand-yellow/20 rounded-lg p-4 mt-4">
-                    <div className="flex gap-3">
-                      <div className="p-2 bg-brand-yellow/10 rounded-lg h-fit">
-                        <Zap className="w-5 h-5 text-brand-yellow" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-brand-yellow">Expresní revize?</h4>
-                        <p className="text-sm text-gray-400 mt-1">
-                          Potřebujete revizi co nejdříve? V poznámce uveďte &quot;EXPRESNÍ&quot; a my se vám ozveme s nejbližším možným termínem.
-                        </p>
-                      </div>
+                  {revisionCategories.length > 0 && (
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Typ prostředí (pro správný výpočet lhůty)</label>
+                      <select
+                        value={selectedCategoryId}
+                        onChange={(e) => setSelectedCategoryId(e.target.value)}
+                        className="w-full bg-[#111] border border-white/10 rounded-lg p-3 text-white focus:border-brand-yellow outline-none"
+                      >
+                        <option value="">Vyberte kategorii (nepovinné)...</option>
+                        {Object.entries(
+                          revisionCategories.reduce((acc: Record<string, any[]>, cat: any) => {
+                            if (!acc[cat.group]) acc[cat.group] = [];
+                            acc[cat.group].push(cat);
+                            return acc;
+                          }, {})
+                        ).map(([group, cats]) => (
+                          <optgroup key={group} label={group}>
+                            {(cats as any[]).map((cat: any) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name} ({cat.intervalMonths} měs.)
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Pomůže nám správně hlídat termín další revize.</p>
                     </div>
-                  </div>
+                  )}
                 </>
               )}
             </motion.div>

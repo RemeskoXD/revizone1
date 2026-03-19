@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, ClipboardList, MessageSquare, User, LogOut, HardHat } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, MessageSquare, User, LogOut, HardHat, DollarSign } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Přehled', href: '/technician', icon: LayoutDashboard },
   { name: 'Moje zakázky', href: '/technician/queue', icon: ClipboardList },
+  { name: 'Výdělky', href: '/technician/earnings', icon: DollarSign },
   { name: 'Zprávy', href: '/technician/messages', icon: MessageSquare },
   { name: 'Profil', href: '/technician/profile', icon: User },
 ];

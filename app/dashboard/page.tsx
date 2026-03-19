@@ -7,68 +7,69 @@ import DashboardClient from './DashboardClient';
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect('/login');
-  }
+  if (!session) redirect('/login');
+  if (session.user.role === 'PRODUCT_MANAGER') redirect('/product-manager');
+  if (['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role)) redirect('/admin');
+  if (session.user.role === 'COMPANY_ADMIN') redirect('/company');
+  if (session.user.role === 'TECHNICIAN') redirect('/technician');
+  if (session.user.role === 'REALTY') redirect('/realty');
 
-  if (session.user.role === 'PRODUCT_MANAGER') {
-    redirect('/product-manager');
-  }
+  const [recentOrders, activeOrdersCount, completedOrdersCount, completedOrders, defectTasks] = await Promise.all([
+    prisma.order.findMany({
+      where: { customerId: session.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { revisionCategory: true },
+    }),
+    prisma.order.count({
+      where: { customerId: session.user.id, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+    }),
+    prisma.order.count({
+      where: { customerId: session.user.id, status: 'COMPLETED' },
+    }),
+    prisma.order.findMany({
+      where: { customerId: session.user.id, status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      include: { revisionCategory: true },
+    }),
+    prisma.defectTask.findMany({
+      where: { userId: session.user.id, status: { not: 'RESOLVED' } },
+      include: { order: { select: { readableId: true, serviceType: true, address: true } } },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    }),
+  ]);
 
-  if (session.user.role === 'ADMIN' || session.user.role === 'SUPPORT' || session.user.role === 'CONTRACTOR') {
-    redirect('/admin');
-  }
-
-  if (session.user.role === 'COMPANY_ADMIN') {
-    redirect('/company');
-  }
-
-  if (session.user.role === 'TECHNICIAN') {
-    redirect('/technician');
-  }
-
-  if (session.user.role === 'REALTY') {
-    redirect('/realty');
-  }
-
-  const orders = await prisma.order.findMany({
-    where: { customerId: session.user.id },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
-  const activeOrdersCount = await prisma.order.count({
-    where: { customerId: session.user.id, status: { not: 'COMPLETED' } },
-  });
-  const completedOrdersCount = await prisma.order.count({
-    where: { customerId: session.user.id, status: 'COMPLETED' },
-  });
-
-  const completedOrders = await prisma.order.findMany({
-    where: { customerId: session.user.id, status: 'COMPLETED' },
-    orderBy: { updatedAt: 'desc' },
-  });
-
-  let nearestExpiration: string | null = null;
   const now = new Date();
-  let closestDays = Infinity;
-  for (const order of completedOrders) {
-    const expires = new Date(order.updatedAt);
-    expires.setFullYear(expires.getFullYear() + 3);
+  const watchdogItems = completedOrders.map((order) => {
+    const months = order.revisionCategory?.intervalMonths || 36;
+    const completedDate = order.completedAt ? new Date(order.completedAt) : new Date(order.updatedAt);
+    const expires = new Date(completedDate);
+    expires.setMonth(expires.getMonth() + months);
     const daysLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysLeft < closestDays) {
-      closestDays = daysLeft;
-      nearestExpiration = expires.toLocaleDateString('cs-CZ');
-    }
-  }
+    
+    return {
+      id: order.id,
+      readableId: order.readableId,
+      serviceType: order.serviceType,
+      address: order.address,
+      completedAt: completedDate.toISOString(),
+      expiresAt: expires.toISOString(),
+      daysLeft,
+      categoryName: order.revisionCategory?.name || null,
+      result: order.revisionResult,
+      hasReport: !!order.reportFile,
+      status: daysLeft <= 0 ? 'expired' : daysLeft <= 90 ? 'warning' : daysLeft <= 180 ? 'soon' : 'ok',
+    };
+  }).sort((a, b) => a.daysLeft - b.daysLeft);
 
   return (
     <DashboardClient 
       user={session.user} 
-      orders={orders} 
+      recentOrders={recentOrders}
       activeOrdersCount={activeOrdersCount} 
       completedOrdersCount={completedOrdersCount}
-      nearestExpiration={nearestExpiration}
-      nearestExpirationDays={closestDays === Infinity ? null : closestDays}
+      watchdogItems={watchdogItems}
+      defectTasks={defectTasks}
     />
   );
 }

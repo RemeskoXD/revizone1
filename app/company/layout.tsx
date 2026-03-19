@@ -3,20 +3,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Briefcase, Users, FileText, LogOut, Settings } from 'lucide-react';
+import { Briefcase, Users, FileText, Settings, DollarSign, Radio } from 'lucide-react';
 import { PageTransition } from '@/components/PageTransition';
+import { LogoutButton } from '@/components/LogoutButton';
 
 export default async function CompanyLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== 'COMPANY_ADMIN') {
-    redirect('/login');
-  }
+  if (!session || session.user.role !== 'COMPANY_ADMIN') redirect('/login');
 
   return (
     <div className="min-h-screen bg-black text-white flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#111] border-r border-white/5 flex flex-col hidden md:flex">
+      <aside className="w-64 bg-[#111] border-r border-white/5 flex-col hidden md:flex">
         <div className="p-6">
           <Link href="/company" className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <div className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center">
@@ -27,7 +24,8 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
-          <Link href="/company" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-white bg-white/5">
+          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Správa</p>
+          <Link href="/company" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <Briefcase className="w-4 h-4" /> Přehled
           </Link>
           <Link href="/company/orders" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
@@ -35,6 +33,12 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
           </Link>
           <Link href="/company/technicians" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <Users className="w-4 h-4" /> Naši technici
+          </Link>
+          <Link href="/company/settlement" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+            <DollarSign className="w-4 h-4" /> Vyúčtování
+          </Link>
+          <Link href="/company/radar" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+            <Radio className="w-4 h-4" /> Radar poptávek
           </Link>
         </nav>
 
@@ -51,13 +55,10 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
           <Link href="/company/settings" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <Settings className="w-4 h-4" /> Nastavení
           </Link>
-          <Link href="/api/auth/signout" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors mt-1">
-            <LogOut className="w-4 h-4" /> Odhlásit se
-          </Link>
+          <LogoutButton />
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">

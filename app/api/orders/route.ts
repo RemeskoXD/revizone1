@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Neautorizováno" }, { status: 401 });
     }
 
-    const { serviceType, propertyType, address, notes, reportFile, preferredDate } = await req.json();
+    const { serviceType, propertyType, address, notes, reportFile, preferredDate, revisionCategoryId } = await req.json();
 
     if (!serviceType || !propertyType || !address) {
       return NextResponse.json({ message: "Chybí povinné údaje" }, { status: 400 });
@@ -115,6 +115,7 @@ export async function POST(req: Request) {
       status: serviceType === 'vlastni_revize' ? "COMPLETED" : "PENDING",
       reportFile: reportFile || null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,
+      revisionCategoryId: revisionCategoryId || null,
     };
 
     if (serviceType !== 'vlastni_revize') {

@@ -17,20 +17,21 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ message: 'Cannot delete yourself' }, { status: 400 });
     }
 
-    const deletedUser = await prisma.user.delete({
+    const deletedUser = await prisma.user.update({
       where: { id },
+      data: { isDeleted: true },
     });
 
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
-        action: 'DELETED_USER',
-        details: `Smazán uživatel ${deletedUser.email}`,
+        action: 'SOFT_DELETED_USER',
+        details: `Deaktivován uživatel ${deletedUser.email}`,
         targetId: id
       }
     });
 
-    return NextResponse.json({ message: 'User deleted' }, { status: 200 });
+    return NextResponse.json({ message: 'User deactivated' }, { status: 200 });
   } catch (error) {
     console.error('Delete user error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

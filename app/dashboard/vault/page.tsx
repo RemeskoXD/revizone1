@@ -17,6 +17,7 @@ export default async function VaultPage() {
       status: 'COMPLETED',
     },
     orderBy: { updatedAt: 'desc' },
+    include: { revisionCategory: true },
   });
 
   return <VaultClient completedOrders={completedOrders} />;

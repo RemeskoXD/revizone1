@@ -13,20 +13,21 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
-    await prisma.order.delete({
+    const order = await prisma.order.update({
       where: { id },
+      data: { isDeleted: true },
     });
 
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
-        action: 'DELETED_ORDER',
-        details: `Smazána objednávka ${id}`,
+        action: 'SOFT_DELETED_ORDER',
+        details: `Přesunuta do koše objednávka ${order.readableId}`,
         targetId: id
       }
     });
 
-    return NextResponse.json({ message: 'Order deleted' }, { status: 200 });
+    return NextResponse.json({ message: 'Order moved to trash' }, { status: 200 });
   } catch (error) {
     console.error('Delete order error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

@@ -14,7 +14,8 @@ model User {
   emailVerified DateTime?
   password      String?
   phone         String?
-  role          String    @default("CUSTOMER") // CUSTOMER, TECHNICIAN, COMPANY_ADMIN, REALTY, ADMIN
+  role          String    @default("CUSTOMER")
+  isDeleted     Boolean   @default(false)
   priority      Int       @default(0) // Higher number = higher priority for order assignment
   
   // For Technicians belonging to a Company
@@ -40,6 +41,7 @@ model User {
   claimedProperties Property[] @relation("PropertyClaimer")
   activityLogs    ActivityLog[]
   messages        Message[]      @relation("UserMessages")
+  defectTasks     DefectTask[]
 }
 
 model RoleRequest {
@@ -79,7 +81,8 @@ model DocumentTransfer {
 
 model Order {
   id            String    @id @default(cuid())
-  readableId    String    @unique // e.g., ORD-2023-156
+  readableId    String    @unique
+  isDeleted     Boolean   @default(false)
   customerId    String
   customer      User      @relation("CustomerOrders", fields: [customerId], references: [id])
   technicianId  String?
@@ -88,6 +91,8 @@ model Order {
   company       User?     @relation("CompanyOrders", fields: [companyId], references: [id])
   propertyId    String?
   property      Property? @relation(fields: [propertyId], references: [id])
+  revisionCategoryId String?
+  revisionCategory   RevisionCategory? @relation(fields: [revisionCategoryId], references: [id])
   serviceType   String
   propertyType  String
   address       String
@@ -95,14 +100,34 @@ model Order {
   status        String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
   assignedAt    DateTime? // When it was assigned to tech/company (for the 1-day rule)
   isPublic      Boolean   @default(false) // If true, available to all (after 1 day expires)
-  reportFile    String?   // Base64 encoded PDF or URL
-  price         Float?    // Expected price for the order
-  preferredDate DateTime? // Preferred date for the revision
+  reportFile    String?   @db.LongText // Base64 encoded PDF
+  price         Float?
+  preferredDate DateTime? // Customer's preferred date (orientation)
+  scheduledDate DateTime? // Technician's confirmed date
+  scheduledNote String?   @db.Text // Technician's note about scheduling
+  confirmedAddress String? // Technician can update the address
+  revisionResult String?  // PASS, PASS_WITH_NOTES, FAIL
+  revisionNotes  String?  @db.Text // Technician's findings/notes
+  nextRevisionDate DateTime? // Manually set by technician
+  completedAt    DateTime? // When the revision was actually completed
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   checklists    ChecklistItem[]
   messages      Message[]
+  defectTasks   DefectTask[]
+}
+
+model RevisionCategory {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  group          String
+  intervalMonths Int
+  legalBasis     String?
+  description    String?
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Property {
@@ -153,4 +178,38 @@ model Message {
   sender      User     @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
   content     String   @db.Text
   createdAt   DateTime @default(now())
+}
+
+model DefectTask {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ShareLink {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  label       String?
+  orderIds    String   @db.Text // JSON array of order IDs
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+  label String?
+  updatedAt DateTime @updatedAt
 }

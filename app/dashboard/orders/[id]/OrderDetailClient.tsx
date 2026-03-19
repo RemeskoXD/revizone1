@@ -14,13 +14,15 @@ import {
   Download,
   User,
   ShieldCheck,
-  Building
+  Building,
+  Lightbulb
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Order } from '@prisma/client';
 import { ChatSection } from '@/components/ChatSection';
+import { getTipsForService } from '@/lib/preparationTips';
 
 export default function OrderDetailClient({ order, currentUser, technicians = [] }: { order: Order, currentUser: any, technicians?: any[] }) {
   const [selectedTechId, setSelectedTechId] = useState('');
@@ -115,6 +117,28 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
         {/* Left Column: Details & Timeline */}
         <div className="w-full lg:w-2/3 flex flex-col gap-6 overflow-y-auto pr-2">
           
+          {/* Preparation Tips - only show before completion */}
+          {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (() => {
+            const tips = getTipsForService(order.serviceType);
+            if (tips.length === 0) return null;
+            return (
+              <div className="bg-brand-yellow/5 border border-brand-yellow/20 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Lightbulb className="w-5 h-5 text-brand-yellow" />
+                  <h3 className="text-sm font-bold text-brand-yellow">Co si nachystat před revizí</h3>
+                </div>
+                <ul className="space-y-2">
+                  {tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                      <span className="text-brand-yellow mt-0.5">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+
           {/* Status Timeline */}
           <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-6">Průběh revize</h3>
@@ -124,9 +148,27 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
                     {[
                         { status: 'Objednáno', date: new Date(order.createdAt).toLocaleString('cs-CZ'), active: true, completed: true },
                         { status: 'Přiřazen technik', date: order.technicianId ? 'Ano' : '-', active: !!order.technicianId, completed: !!order.technicianId, desc: order.technicianId ? 'Technik přiřazen' : '' },
-                        { status: 'Naplánováno', date: '-', active: false, completed: false, current: false },
-                        { status: 'Revize provedena', date: order.status === 'COMPLETED' ? 'Ano' : '-', active: order.status === 'COMPLETED', completed: order.status === 'COMPLETED' },
-                        { status: 'Zpráva vystavena', date: order.status === 'COMPLETED' ? 'Ano' : '-', active: order.status === 'COMPLETED', completed: order.status === 'COMPLETED' },
+                        { 
+                          status: 'Naplánováno', 
+                          date: (order as any).scheduledDate ? new Date((order as any).scheduledDate).toLocaleString('cs-CZ') : '-', 
+                          active: !!(order as any).scheduledDate, 
+                          completed: !!(order as any).scheduledDate, 
+                          current: !!(order as any).scheduledDate && order.status === 'IN_PROGRESS',
+                          desc: (order as any).scheduledNote || ((order as any).confirmedAddress && (order as any).confirmedAddress !== order.address ? `Adresa upřesněna: ${(order as any).confirmedAddress}` : '')
+                        },
+                        { 
+                          status: 'Revize provedena', 
+                          date: (order as any).completedAt ? new Date((order as any).completedAt).toLocaleString('cs-CZ') : '-', 
+                          active: order.status === 'COMPLETED', 
+                          completed: order.status === 'COMPLETED',
+                          desc: (order as any).revisionResult === 'PASS' ? 'Bez závad' : (order as any).revisionResult === 'PASS_WITH_NOTES' ? 'S výhradami' : (order as any).revisionResult === 'FAIL' ? 'Nevyhovuje' : ''
+                        },
+                        { 
+                          status: 'Zpráva vystavena', 
+                          date: order.reportFile ? 'Dostupná ke stažení' : '-', 
+                          active: !!order.reportFile, 
+                          completed: !!order.reportFile 
+                        },
                     ].map((step, i) => (
                         <div key={i} className="flex gap-4">
                             <div className={cn(
@@ -246,6 +288,43 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
                 </div>
             </div>
           </div>
+
+          {/* Technician Info - Scheduling & Result */}
+          {((order as any).scheduledDate || (order as any).revisionNotes || (order as any).nextRevisionDate) && (
+            <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-white">Informace od technika</h3>
+              {(order as any).scheduledDate && (
+                <div className="flex items-center gap-3 p-3 bg-[#111] rounded-lg border border-white/5">
+                  <Calendar className="w-5 h-5 text-brand-yellow shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Potvrzený termín</p>
+                    <p className="text-white font-medium">{new Date((order as any).scheduledDate).toLocaleString('cs-CZ')}</p>
+                  </div>
+                </div>
+              )}
+              {(order as any).scheduledNote && (
+                <div className="p-3 bg-[#111] rounded-lg border border-white/5">
+                  <p className="text-xs text-gray-500 mb-1">Poznámka technika k termínu:</p>
+                  <p className="text-sm text-gray-300">{(order as any).scheduledNote}</p>
+                </div>
+              )}
+              {(order as any).revisionNotes && (
+                <div className="p-3 bg-[#111] rounded-lg border border-white/5">
+                  <p className="text-xs text-gray-500 mb-1">Poznámky z revize:</p>
+                  <p className="text-sm text-gray-300">{(order as any).revisionNotes}</p>
+                </div>
+              )}
+              {(order as any).nextRevisionDate && (
+                <div className="flex items-center gap-3 p-3 bg-brand-yellow/5 rounded-lg border border-brand-yellow/20">
+                  <ShieldCheck className="w-5 h-5 text-brand-yellow shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Další plánovaná revize</p>
+                    <p className="text-brand-yellow font-medium">{new Date((order as any).nextRevisionDate).toLocaleDateString('cs-CZ')}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Documents (if any) */}
           <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6">
