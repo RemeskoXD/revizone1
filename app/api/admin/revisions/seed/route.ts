@@ -28,7 +28,7 @@ const REVISION_CATEGORIES = [
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || !['ADMIN', 'SUPPORT'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

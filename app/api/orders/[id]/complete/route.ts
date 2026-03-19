@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notifyOrderCompleted, notifyDefectCreated } from '@/lib/notifications';
@@ -81,6 +82,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2000'
+    ) {
+      const meta = error.meta as { column_name?: string } | undefined;
+      const col = meta?.column_name;
+      if (col === 'reportFile') {
+        return NextResponse.json(
+          {
+            message:
+              'Revizní zpráva je příliš velká pro sloupec v databázi. Administrátor musí v MySQL nastavit `Order.reportFile` na LONGTEXT, např.: ALTER TABLE `Order` MODIFY COLUMN `reportFile` LONGTEXT NULL; Poté obnovte stránku a zkuste znovu.',
+          },
+          { status: 413 }
+        );
+      }
+      return NextResponse.json(
+        {
+          message: `Hodnota je příliš dlouhá pro sloupec${col ? ` (${col})` : ''}. Kontaktujte administrátora databáze.`,
+        },
+        { status: 413 }
+      );
+    }
     console.error('Complete order error:', error);
     return NextResponse.json({ message: 'Interní chyba serveru' }, { status: 500 });
   }

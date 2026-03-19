@@ -4,10 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import RevisionsClient from './RevisionsClient';
 
+/** Stejné role jako v middleware pro `/admin` (jinak CONTRACTOR skončí na redirect smyčce). */
+const REVISIONS_PAGE_ROLES = ['ADMIN', 'SUPPORT', 'CONTRACTOR'];
+
 export default async function RevisionsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || !['ADMIN', 'SUPPORT'].includes(session.user.role)) {
+  if (!session || !REVISIONS_PAGE_ROLES.includes(session.user.role)) {
     redirect('/login');
   }
 
@@ -18,5 +21,7 @@ export default async function RevisionsPage() {
     },
   });
 
-  return <RevisionsClient categories={categories} isAdmin={session.user.role === 'ADMIN'} />;
+  const canEdit = session.user.role === 'ADMIN' || session.user.role === 'SUPPORT';
+
+  return <RevisionsClient categories={categories} isAdmin={canEdit} />;
 }
