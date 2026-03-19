@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, role, companyId } = await req.json();
+    const { name, email, password, role, companyId, inviteCode } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -22,6 +22,27 @@ export async function POST(req: Request) {
         { message: "Uživatel s tímto e-mailem již existuje" },
         { status: 400 }
       );
+    }
+
+    // Validate invite code if role is PENDING_SUPPORT or PENDING_CONTRACTOR
+    if (role === 'PENDING_SUPPORT' || role === 'PENDING_CONTRACTOR') {
+      if (!inviteCode) {
+        return NextResponse.json(
+          { message: "Chybí zvací kód" },
+          { status: 400 }
+        );
+      }
+
+      const adminWithCode = await prisma.user.findFirst({
+        where: { inviteCode, role: 'ADMIN' }
+      });
+
+      if (!adminWithCode) {
+        return NextResponse.json(
+          { message: "Neplatný zvací kód" },
+          { status: 400 }
+        );
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

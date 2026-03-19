@@ -1,6 +1,3 @@
-import { StatCard } from '@/components/dashboard/StatCard';
-import { AlertTriangle, Calendar, CheckCircle2, Clock, FileText, ArrowRight, Check, X } from 'lucide-react';
-import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -18,7 +15,7 @@ export default async function DashboardPage() {
     redirect('/product-manager');
   }
 
-  if (session.user.role === 'ADMIN') {
+  if (session.user.role === 'ADMIN' || session.user.role === 'SUPPORT' || session.user.role === 'CONTRACTOR') {
     redirect('/admin');
   }
 
@@ -51,18 +48,12 @@ export default async function DashboardPage() {
     where: { customerId: session.user.id, status: 'COMPLETED' },
   });
 
-  const pendingTransfers = await prisma.documentTransfer.findMany({
-    where: { receiverId: session.user.id, status: 'PENDING' },
-    include: { sender: true }
-  });
-
   return (
     <DashboardClient 
       user={session.user} 
       orders={orders} 
       activeOrdersCount={activeOrdersCount} 
       completedOrdersCount={completedOrdersCount} 
-      pendingTransfers={pendingTransfers} 
     />
   );
 }

@@ -19,7 +19,7 @@ export default async function TechnicianDashboard() {
   });
 
   const openJobsCount = await prisma.order.count({
-    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS', 'NEEDS_REVISION'] } },
   });
 
   const completedJobsCount = await prisma.order.count({
@@ -27,7 +27,7 @@ export default async function TechnicianDashboard() {
   });
 
   const activeJobs = await prisma.order.findMany({
-    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS', 'NEEDS_REVISION'] } },
     select: { price: true }
   });
 
@@ -44,7 +44,7 @@ export default async function TechnicianDashboard() {
   });
 
   const todaysJobs = await prisma.order.findMany({
-    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+    where: { technicianId: session.user.id, status: { in: ['PENDING', 'IN_PROGRESS', 'NEEDS_REVISION'] } },
     orderBy: { createdAt: 'asc' },
     take: 3,
   });

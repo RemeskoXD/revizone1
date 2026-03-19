@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, FileText, Send, LogOut, Settings } from 'lucide-react';
+import { Building2, FileText, Send, LogOut, Settings, Home } from 'lucide-react';
 import { PageTransition } from '@/components/PageTransition';
 
 export default async function RealtyLayout({ children }: { children: ReactNode }) {
@@ -30,8 +30,8 @@ export default async function RealtyLayout({ children }: { children: ReactNode }
           <Link href="/realty" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-white bg-white/5">
             <Building2 className="w-4 h-4" /> Přehled
           </Link>
-          <Link href="/realty/documents" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-            <FileText className="w-4 h-4" /> Dokumenty
+          <Link href="/realty/properties" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+            <Home className="w-4 h-4" /> Nemovitosti
           </Link>
           <Link href="/realty/transfers" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <Send className="w-4 h-4" /> Převody

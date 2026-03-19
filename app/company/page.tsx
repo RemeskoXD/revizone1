@@ -144,11 +144,13 @@ export default async function CompanyDashboard() {
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                         order.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
                                         order.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                        order.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
                                         order.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
                                         'bg-yellow-500/10 text-yellow-500'
                                     }`}>
                                         {order.status === 'COMPLETED' ? 'Dokončeno' :
                                          order.status === 'IN_PROGRESS' ? 'Probíhá' :
+                                         order.status === 'NEEDS_REVISION' ? 'K přepracování' :
                                          order.status === 'CANCELLED' ? 'Zrušeno' : 'Nová'}
                                     </span>
                                   </AnimatedItem>

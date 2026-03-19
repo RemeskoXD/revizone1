@@ -15,5 +15,14 @@ export default async function AdminSettingsPage() {
     where: { id: session.user.id }
   });
 
-  return <AdminSettingsClient user={user} />;
+  const teamMembers = await prisma.user.findMany({
+    where: {
+      role: {
+        in: ['SUPPORT', 'CONTRACTOR', 'PENDING_SUPPORT', 'PENDING_CONTRACTOR']
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return <AdminSettingsClient user={user} teamMembers={teamMembers} />;
 }

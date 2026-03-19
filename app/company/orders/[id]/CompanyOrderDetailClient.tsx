@@ -11,7 +11,8 @@ import { ChatSection } from '@/components/ChatSection';
 export default function CompanyOrderDetailClient({ order, currentUser, technicians }: { order: any, currentUser: any, technicians: any[] }) {
   const [status, setStatus] = useState(
     order.status === 'COMPLETED' ? 'completed' : 
-    order.status === 'IN_PROGRESS' ? 'in_progress' : 'pending'
+    order.status === 'IN_PROGRESS' ? 'in_progress' : 
+    order.status === 'NEEDS_REVISION' ? 'needs_revision' : 'pending'
   );
   const [isClaiming, setIsClaiming] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -84,10 +85,12 @@ export default function CompanyOrderDetailClient({ order, currentUser, technicia
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         status === 'completed' ? 'bg-green-500/10 text-green-500' : 
                         status === 'in_progress' ? 'bg-blue-500/10 text-blue-500' :
+                        status === 'needs_revision' ? 'bg-orange-500/10 text-orange-500' :
                         'bg-yellow-500/10 text-yellow-500'
                     }`}>
                         {status === 'completed' ? 'Dokončeno' : 
-                         status === 'in_progress' ? 'Probíhá' : 'Čeká na přijetí'}
+                         status === 'in_progress' ? 'Probíhá' : 
+                         status === 'needs_revision' ? 'K přepracování' : 'Čeká na přijetí'}
                     </span>
                     {order.isPublic && order.status === 'PENDING' && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-brand-yellow/10 text-brand-yellow">

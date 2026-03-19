@@ -5,7 +5,7 @@ import { Search, Shield, User as UserIcon, Mail, Phone, CheckCircle2, MoreHorizo
 import { User } from '@prisma/client';
 import { motion } from 'motion/react';
 
-export default function AdminUsersClient({ initialUsers }: { initialUsers: User[] }) {
+export default function AdminUsersClient({ initialUsers, userRole }: { initialUsers: User[], userRole: string }) {
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
@@ -122,13 +122,15 @@ export default function AdminUsersClient({ initialUsers }: { initialUsers: User[
               />
           </div>
         </div>
-        <button 
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Přidat uživatele
-        </button>
+        {userRole === 'ADMIN' && (
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Přidat uživatele
+          </button>
+        )}
       </div>
 
       {/* Users Table */}
@@ -237,12 +239,16 @@ export default function AdminUsersClient({ initialUsers }: { initialUsers: User[
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-end gap-2">
-                                    <button onClick={() => { setEditingUser(user.id); setEditPriority(user.priority); setEditRole(user.role); }} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
-                                        <span className="text-xs font-medium">Smazat</span>
-                                    </button>
+                                    {userRole === 'ADMIN' && (
+                                      <>
+                                        <button onClick={() => { setEditingUser(user.id); setEditPriority(user.priority); setEditRole(user.role); }} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                                            <span className="text-xs font-medium">Smazat</span>
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 )}
                             </td>

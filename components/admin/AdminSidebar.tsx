@@ -1,17 +1,24 @@
 import Link from 'next/link';
 import { LayoutDashboard, Users, FileText, Settings, LogOut, ShieldAlert, BarChart3, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-const navigation = [
-  { name: 'Přehled', href: '/admin', icon: LayoutDashboard },
-  { name: 'Objednávky', href: '/admin/orders', icon: FileText },
-  { name: 'Uživatelé', href: '/admin/users', icon: Users },
-  { name: 'Historie', href: '/admin/history', icon: Activity },
-  { name: 'Analytika', href: '/admin/analytics', icon: BarChart3 },
-  { name: 'Nastavení', href: '/admin/settings', icon: Settings },
-];
+export async function AdminSidebar() {
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role;
 
-export function AdminSidebar() {
+  const navigation = [
+    { name: 'Přehled', href: '/admin', icon: LayoutDashboard, roles: ['ADMIN', 'SUPPORT', 'CONTRACTOR'] },
+    { name: 'Objednávky', href: '/admin/orders', icon: FileText, roles: ['ADMIN', 'SUPPORT', 'CONTRACTOR'] },
+    { name: 'Uživatelé', href: '/admin/users', icon: Users, roles: ['ADMIN', 'SUPPORT'] },
+    { name: 'Historie', href: '/admin/history', icon: Activity, roles: ['ADMIN', 'SUPPORT'] },
+    { name: 'Analytika', href: '/admin/analytics', icon: BarChart3, roles: ['ADMIN'] },
+    { name: 'Nastavení', href: '/admin/settings', icon: Settings, roles: ['ADMIN'] },
+  ];
+
+  const filteredNavigation = navigation.filter(item => role && item.roles.includes(role));
+
   return (
     <div className="flex h-full w-64 flex-col bg-[#111] border-r border-white/10">
       <div className="flex h-16 items-center px-6 border-b border-white/10">
@@ -26,7 +33,7 @@ export function AdminSidebar() {
       <div className="flex-1 flex flex-col gap-1 px-3 py-6">
         <div className="space-y-1">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Správa</p>
-            {navigation.map((item) => (
+            {filteredNavigation.map((item) => (
             <Link
                 key={item.name}
                 href={item.href}

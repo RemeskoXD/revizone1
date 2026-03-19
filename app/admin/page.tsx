@@ -10,7 +10,7 @@ import { AnimatedItem } from '@/components/AnimatedItem';
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role)) {
     redirect('/login');
   }
 
@@ -54,16 +54,18 @@ export default async function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <AnimatedItem delay={0.1}>
-          <StatCard 
-              title="Celkový obrat" 
-              value={`${totalRevenue.toLocaleString('cs-CZ')} Kč`} 
-              description="Z dokončených zakázek"
-              icon={DollarSign}
-              trendUp={true}
-              href="/admin/orders"
-          />
-        </AnimatedItem>
+        {session.user.role === 'ADMIN' && (
+          <AnimatedItem delay={0.1}>
+            <StatCard 
+                title="Celkový obrat" 
+                value={`${totalRevenue.toLocaleString('cs-CZ')} Kč`} 
+                description="Z dokončených zakázek"
+                icon={DollarSign}
+                trendUp={true}
+                href="/admin/orders"
+            />
+          </AnimatedItem>
+        )}
         <AnimatedItem delay={0.2}>
           <StatCard 
               title="Aktivní objednávky" 
@@ -74,25 +76,29 @@ export default async function AdminDashboard() {
               href="/admin/orders"
           />
         </AnimatedItem>
-        <AnimatedItem delay={0.3}>
-          <StatCard 
-              title="Registrovaní uživatelé" 
-              value={usersCount.toString()} 
-              description="Celkový počet"
-              icon={Users}
-              href="/admin/users"
-          />
-        </AnimatedItem>
-        <AnimatedItem delay={0.4}>
-          <StatCard 
-              title="Žádosti o roli" 
-              value={pendingRoleRequests.length.toString()} 
-              description="Čeká na schválení"
-              icon={Briefcase}
-              alert={pendingRoleRequests.length > 0}
-              href="/admin/roles"
-          />
-        </AnimatedItem>
+        {(session.user.role === 'ADMIN' || session.user.role === 'SUPPORT') && (
+          <AnimatedItem delay={0.3}>
+            <StatCard 
+                title="Registrovaní uživatelé" 
+                value={usersCount.toString()} 
+                description="Celkový počet"
+                icon={Users}
+                href="/admin/users"
+            />
+          </AnimatedItem>
+        )}
+        {session.user.role === 'ADMIN' && (
+          <AnimatedItem delay={0.4}>
+            <StatCard 
+                title="Žádosti o roli" 
+                value={pendingRoleRequests.length.toString()} 
+                description="Čeká na schválení"
+                icon={Briefcase}
+                alert={pendingRoleRequests.length > 0}
+                href="/admin/roles"
+            />
+          </AnimatedItem>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -133,11 +139,13 @@ export default async function AdminDashboard() {
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                         order.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
                                         order.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                        order.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
                                         order.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
                                         'bg-yellow-500/10 text-yellow-500'
                                     }`}>
                                         {order.status === 'COMPLETED' ? 'Dokončeno' :
                                          order.status === 'IN_PROGRESS' ? 'Probíhá' :
+                                         order.status === 'NEEDS_REVISION' ? 'K přepracování' :
                                          order.status === 'CANCELLED' ? 'Zrušeno' : 'Nová'}
                                     </span>
                                   </AnimatedItem>
@@ -157,7 +165,7 @@ export default async function AdminDashboard() {
         <AnimatedItem delay={0.6} className="bg-[#111] border border-white/5 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-6">Upozornění systému</h3>
             <div className="space-y-4">
-                {pendingRoleRequests.length > 0 && (
+                {session.user.role === 'ADMIN' && pendingRoleRequests.length > 0 && (
                   <div className="flex gap-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                       <div className="mt-1">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>

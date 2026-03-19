@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 
-export default function AdminOrdersClient({ initialOrders, technicians, companies }: { initialOrders: any[], technicians: any[], companies: any[] }) {
+export default function AdminOrdersClient({ initialOrders, technicians, companies, userRole }: { initialOrders: any[], technicians: any[], companies: any[], userRole: string }) {
   const [orders, setOrders] = useState(initialOrders);
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<string>('');
@@ -155,6 +155,7 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                                   >
                                     <option value="PENDING">Nová</option>
                                     <option value="IN_PROGRESS">Probíhá</option>
+                                    <option value="NEEDS_REVISION">K přepracování</option>
                                     <option value="COMPLETED">Dokončeno</option>
                                     <option value="CANCELLED">Zrušeno</option>
                                   </select>
@@ -163,11 +164,13 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     order.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
                                     order.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                    order.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
                                     order.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
                                     'bg-yellow-500/10 text-yellow-500'
                                 }`}>
                                     {order.status === 'COMPLETED' ? 'Dokončeno' :
                                      order.status === 'IN_PROGRESS' ? 'Probíhá' :
+                                     order.status === 'NEEDS_REVISION' ? 'K přepracování' :
                                      order.status === 'CANCELLED' ? 'Zrušeno' : 'Nová'}
                                 </span>
                               )}
@@ -186,9 +189,11 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                                   <Link href={`/dashboard/orders/${order.readableId}`} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors inline-block">
                                       <MoreHorizontal className="w-4 h-4" />
                                   </Link>
-                                  <button onClick={() => handleDeleteOrder(order.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors inline-block">
-                                      <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  {userRole === 'ADMIN' && (
+                                    <button onClick={() => handleDeleteOrder(order.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors inline-block">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
                                 </div>
                               )}
                           </td>

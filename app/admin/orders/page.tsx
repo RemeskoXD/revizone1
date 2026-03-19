@@ -7,7 +7,7 @@ import AdminOrdersClient from './AdminOrdersClient';
 export default async function AdminOrdersPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role)) {
     redirect('/login');
   }
 
@@ -39,7 +39,7 @@ export default async function AdminOrdersPage() {
         </div>
       </div>
 
-      <AdminOrdersClient initialOrders={orders} technicians={technicians} companies={companies} />
+      <AdminOrdersClient initialOrders={orders} technicians={technicians} companies={companies} userRole={session.user.role} />
     </div>
   );
 }

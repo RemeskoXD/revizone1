@@ -85,8 +85,13 @@ export default function TechnicianDashboardClient({ user, newRequestsCount, open
                                 </div>
                             </div>
                             <div className="ml-auto flex flex-col items-end justify-center">
-                                <span className="text-xs font-medium px-2 py-1 rounded bg-white/10 text-gray-300">
-                                  {job.status === 'IN_PROGRESS' ? 'Probíhá' : 'Čeká'}
+                                <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                  job.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                  job.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
+                                  'bg-white/10 text-gray-300'
+                                }`}>
+                                  {job.status === 'IN_PROGRESS' ? 'Probíhá' : 
+                                   job.status === 'NEEDS_REVISION' ? 'K přepracování' : 'Čeká'}
                                 </span>
                                 <span className="text-xs text-brand-yellow mt-2 hover:underline">Detail</span>
                             </div>

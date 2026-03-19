@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const message = searchParams.get("message");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +33,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError(res.error);
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = callbackUrl;
       }
     } catch (err) {
       setError("Došlo k chybě při přihlašování");
@@ -56,6 +60,12 @@ export default function LoginPage() {
 
         <h1 className="text-2xl font-bold text-white text-center mb-2">Přihlášení</h1>
         <p className="text-gray-400 text-center text-sm mb-8">Vítejte zpět v REVIZONE APLIKACE</p>
+
+        {message && (
+          <div className="bg-green-500/10 border border-green-500/20 text-green-500 text-sm p-3 rounded-lg mb-6 text-center">
+            {message}
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-lg mb-6 text-center">
@@ -100,11 +110,19 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-sm text-gray-500">
           Nemáte účet?{" "}
-          <Link href="/register" className="text-white hover:text-brand-yellow transition-colors">
+          <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-white hover:text-brand-yellow transition-colors">
             Zaregistrovat se
           </Link>
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#111111]"><Loader2 className="w-8 h-8 animate-spin text-brand-yellow" /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

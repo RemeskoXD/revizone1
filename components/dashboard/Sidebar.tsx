@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 const navigation = [
   { name: 'Přehled', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Objednávky', href: '/dashboard/orders', icon: FileText },
-  { name: 'Moje produkty', href: '/dashboard/products', icon: Package },
   { name: 'Trezor revizí', href: '/dashboard/vault', icon: ShieldCheck },
   { name: 'Nastavení', href: '/dashboard/settings', icon: Settings },
 ];

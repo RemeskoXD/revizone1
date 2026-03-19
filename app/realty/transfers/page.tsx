@@ -1,26 +1,34 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import RealtyTransfersClient from './RealtyTransfersClient';
+import { prisma } from '@/lib/prisma';
+import TransfersClient from './TransfersClient';
 
-export default async function RealtyTransfersPage() {
+export default async function TransfersPage() {
   const session = await getServerSession(authOptions);
 
   if (!session || session.user.role !== 'REALTY') {
     redirect('/login');
   }
 
-  const transfers = await prisma.documentTransfer.findMany({
-    where: { senderId: session.user.id },
-    include: { receiver: true },
-    orderBy: { createdAt: 'desc' }
+  const claimedProperties = await prisma.property.findMany({
+    where: { 
+      ownerId: session.user.id,
+      transferStatus: 'CLAIMED'
+    },
+    include: {
+      claimedBy: {
+        select: { id: true, name: true, email: true }
+      }
+    },
+    orderBy: { updatedAt: 'desc' },
   });
 
-  const availableDocuments = await prisma.order.findMany({
-    where: { customerId: session.user.id, status: 'COMPLETED' },
-    orderBy: { createdAt: 'desc' }
-  });
+  const serializedProperties = claimedProperties.map(p => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  }));
 
-  return <RealtyTransfersClient transfers={transfers} availableDocuments={availableDocuments} />;
+  return <TransfersClient initialProperties={serializedProperties} />;
 }

@@ -54,11 +54,13 @@ export default async function CompanyOrdersPage() {
                                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                                     job.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
                                     job.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                    job.status === 'NEEDS_REVISION' ? 'bg-orange-500/10 text-orange-500' :
                                     job.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
                                     'bg-yellow-500/10 text-yellow-500'
                                 }`}>
                                     {job.status === 'COMPLETED' ? 'Dokončeno' :
                                      job.status === 'IN_PROGRESS' ? 'Probíhá' :
+                                     job.status === 'NEEDS_REVISION' ? 'K přepracování' :
                                      job.status === 'CANCELLED' ? 'Zrušeno' : 'Nová poptávka'}
                                 </span>
                                 {job.isPublic && job.status === 'PENDING' && (

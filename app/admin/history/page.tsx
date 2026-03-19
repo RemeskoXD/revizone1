@@ -8,7 +8,7 @@ import AdminHistoryClient from './AdminHistoryClient';
 export default async function AdminHistoryPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPPORT'].includes(session.user.role)) {
     redirect('/login');
   }
 

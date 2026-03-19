@@ -36,8 +36,8 @@ model User {
   receivedJoinRequests CompanyJoinRequest[] @relation("CompanyRequests")
   sentTransfers DocumentTransfer[] @relation("Sender")
   receivedTransfers DocumentTransfer[] @relation("Receiver")
-  managedProducts Product[] @relation("ManagerProducts")
-  sharedProducts  ProductShare[] @relation("CustomerShares")
+  properties    Property[] @relation("PropertyOwner")
+  claimedProperties Property[] @relation("PropertyClaimer")
   activityLogs    ActivityLog[]
   messages        Message[]      @relation("UserMessages")
 }
@@ -86,6 +86,8 @@ model Order {
   technician    User?     @relation("TechnicianOrders", fields: [technicianId], references: [id])
   companyId     String?
   company       User?     @relation("CompanyOrders", fields: [companyId], references: [id])
+  propertyId    String?
+  property      Property? @relation(fields: [propertyId], references: [id])
   serviceType   String
   propertyType  String
   address       String
@@ -103,40 +105,24 @@ model Order {
   messages      Message[]
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  code        String?
-  description String?
-  managerId   String
-  manager     User     @relation("ManagerProducts", fields: [managerId], references: [id])
-  documents   ProductDocument[]
-  shares      ProductShare[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+model Property {
+  id             String   @id @default(cuid())
+  name           String   // e.g., "Dům u jezera"
+  address        String?
+  description    String?
+  ownerId        String
+  owner          User     @relation("PropertyOwner", fields: [ownerId], references: [id])
+  
+  orders         Order[]  // Revisions associated with this property
+  
+  // Transfer logic
+  transferToken  String?  @unique
+  transferStatus String?  // e.g., "PENDING", "CLAIMED"
+  claimedById    String?
+  claimedBy      User?    @relation("PropertyClaimer", fields: [claimedById], references: [id])
 
-model ProductDocument {
-  id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name        String
-  fileUrl     String   // Base64 or URL
-  fileType    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model ProductShare {
-  id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  customerId  String
-  customer    User     @relation("CustomerShares", fields: [customerId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([productId, customerId])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model ActivityLog {

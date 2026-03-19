@@ -65,17 +65,49 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
                 "px-2.5 py-0.5 rounded-full text-xs font-medium border",
                 order.status === 'COMPLETED' ? "bg-green-500/10 text-green-500 border-green-500/20" : 
                 order.status === 'IN_PROGRESS' ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
+                order.status === 'NEEDS_REVISION' ? "bg-orange-500/10 text-orange-500 border-orange-500/20" :
                 order.status === 'CANCELLED' ? "bg-red-500/10 text-red-500 border-red-500/20" :
                 "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
             )}>
               {order.status === 'COMPLETED' ? 'Dokončeno' :
                order.status === 'IN_PROGRESS' ? 'Probíhá' :
+               order.status === 'NEEDS_REVISION' ? 'K přepracování' :
                order.status === 'CANCELLED' ? 'Zrušeno' : 'Čeká'}
             </span>
           </div>
           <p className="text-gray-400 text-sm">Vytvořeno {new Date(order.createdAt).toLocaleDateString('cs-CZ')}</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-4">
+            {['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(currentUser.role) && (
+              <select
+                value={order.status}
+                onChange={async (e) => {
+                  const newStatus = e.target.value;
+                  try {
+                    const res = await fetch(`/api/admin/orders/${order.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ status: newStatus }),
+                    });
+                    if (res.ok) {
+                      router.refresh();
+                    } else {
+                      alert('Chyba při změně stavu');
+                    }
+                  } catch (error) {
+                    console.error(error);
+                    alert('Chyba při změně stavu');
+                  }
+                }}
+                className="bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:border-brand-yellow outline-none"
+              >
+                <option value="PENDING">Nová</option>
+                <option value="IN_PROGRESS">Probíhá</option>
+                <option value="NEEDS_REVISION">K přepracování</option>
+                <option value="COMPLETED">Dokončeno</option>
+                <option value="CANCELLED">Zrušeno</option>
+              </select>
+            )}
             <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 <MoreVertical className="w-5 h-5" />
             </button>

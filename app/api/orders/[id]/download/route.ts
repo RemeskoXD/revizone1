@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const isCustomer = order.customerId === session.user.id;
     const isTech = order.technicianId === session.user.id;
     const isCompany = session.user.role === 'COMPANY_ADMIN' && order.companyId === session.user.id;
-    const isAdmin = session.user.role === 'ADMIN';
+    const isAdmin = ['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role);
 
     if (!isCustomer && !isTech && !isCompany && !isAdmin) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

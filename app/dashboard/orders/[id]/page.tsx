@@ -29,7 +29,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const isCustomer = order.customerId === session.user.id;
   const isAssignedTech = order.technicianId === session.user.id;
   const isAssignedCompany = order.companyId === session.user.id;
-  const isAdmin = session.user.role === 'ADMIN';
+  const isAdmin = ['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role);
   const isPublic = order.isPublic && (session.user.role === 'TECHNICIAN' || session.user.role === 'COMPANY_ADMIN');
   
   // Check if the order is assigned to a technician belonging to this company

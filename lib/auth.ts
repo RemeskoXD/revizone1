@@ -30,6 +30,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Nesprávné heslo");
         }
 
+        if (user.role === 'PENDING_SUPPORT' || user.role === 'PENDING_CONTRACTOR') {
+          throw new Error("Váš účet čeká na schválení administrátorem");
+        }
+
         return {
           id: user.id,
           email: user.email,

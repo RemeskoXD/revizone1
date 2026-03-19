@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/login";
+  const inviteCode = searchParams.get("invite");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("CUSTOMER");
+  const [role, setRole] = useState(inviteCode ? "PENDING_SUPPORT" : "CUSTOMER");
   const [companyId, setCompanyId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,11 +43,22 @@ export default function RegisterPage() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, companyId: role === "TECHNICIAN" ? companyId : undefined }),
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password, 
+          role, 
+          companyId: role === "TECHNICIAN" ? companyId : undefined,
+          inviteCode 
+        }),
       });
 
       if (res.ok) {
-        router.push("/login");
+        if (inviteCode) {
+          router.push(`/login?message=${encodeURIComponent('Registrace byla úspěšná. Nyní vyčkejte na schválení administrátorem.')}`);
+        } else {
+          router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        }
       } else {
         const data = await res.json();
         setError(data.message || "Došlo k chybě při registraci");
@@ -71,8 +86,12 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-white text-center mb-2">Registrace</h1>
-        <p className="text-gray-400 text-center text-sm mb-8">Vytvořte si účet v REVIZONE APLIKACE</p>
+        <h1 className="text-2xl font-bold text-white text-center mb-2">
+          {inviteCode ? 'Připojit se k týmu' : 'Registrace'}
+        </h1>
+        <p className="text-gray-400 text-center text-sm mb-8">
+          {inviteCode ? 'Vytvořte si účet zaměstnance' : 'Vytvořte si účet v REVIZONE APLIKACE'}
+        </p>
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-lg mb-6 text-center">
@@ -124,14 +143,24 @@ export default function RegisterPage() {
               onChange={(e) => setRole(e.target.value)}
               className="w-full bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-brand-yellow/50 transition-colors"
             >
-              <option value="CUSTOMER">Zákazník</option>
-              <option value="TECHNICIAN">Revizní technik</option>
-              <option value="COMPANY_ADMIN">Firma</option>
-              <option value="ADMIN">Administrátor</option>
+              {inviteCode ? (
+                <>
+                  <option value="PENDING_SUPPORT">Podpora</option>
+                  <option value="PENDING_CONTRACTOR">Zhotovitel</option>
+                </>
+              ) : (
+                <>
+                  <option value="CUSTOMER">Zákazník</option>
+                  <option value="TECHNICIAN">Revizní technik</option>
+                  <option value="COMPANY_ADMIN">Firma</option>
+                  <option value="ADMIN">Administrátor</option>
+                  <option value="REALTY">Realitní makléř</option>
+                </>
+              )}
             </select>
           </div>
 
-          {role === "TECHNICIAN" && (
+          {role === "TECHNICIAN" && !inviteCode && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -168,11 +197,19 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center text-sm text-gray-500">
           Již máte účet?{" "}
-          <Link href="/login" className="text-white hover:text-brand-yellow transition-colors">
+          <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-white hover:text-brand-yellow transition-colors">
             Přihlásit se
           </Link>
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#111111]"><Loader2 className="w-8 h-8 animate-spin text-brand-yellow" /></div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

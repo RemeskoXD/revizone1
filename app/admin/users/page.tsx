@@ -7,7 +7,7 @@ import AdminUsersClient from './AdminUsersClient';
 export default async function AdminUsersPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPPORT'].includes(session.user.role)) {
     redirect('/login');
   }
 
@@ -24,7 +24,7 @@ export default async function AdminUsersPage() {
         </div>
       </div>
 
-      <AdminUsersClient initialUsers={users} />
+      <AdminUsersClient initialUsers={users} userRole={session.user.role} />
     </div>
   );
 }
