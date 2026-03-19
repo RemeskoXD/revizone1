@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { LayoutDashboard, ClipboardList, MessageSquare, User, LogOut, HardHat } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -22,16 +25,6 @@ export function TechnicianSidebar() {
       </div>
 
       <div className="flex-1 flex flex-col gap-1 px-3 py-6">
-        <div className="px-3 mb-6">
-            <div className="p-3 bg-brand-yellow/10 border border-brand-yellow/20 rounded-lg">
-                <p className="text-xs text-brand-yellow font-semibold uppercase tracking-wider mb-1">Stav</p>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-sm text-white font-medium">Přijímám zakázky</span>
-                </div>
-            </div>
-        </div>
-
         <div className="space-y-1">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Menu</p>
             {navigation.map((item) => (
@@ -51,10 +44,10 @@ export function TechnicianSidebar() {
       </div>
 
       <div className="p-4 border-t border-white/10">
-        <Link href="/" className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+        <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
           <LogOut className="w-5 h-5" />
           Odhlásit se
-        </Link>
+        </button>
       </div>
     </div>
   );

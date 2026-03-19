@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, ShieldAlert, BarChart3, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, ShieldAlert, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { LogoutButton } from '@/components/LogoutButton';
 
 export async function AdminSidebar() {
   const session = await getServerSession(authOptions);
@@ -13,7 +14,6 @@ export async function AdminSidebar() {
     { name: 'Objednávky', href: '/admin/orders', icon: FileText, roles: ['ADMIN', 'SUPPORT', 'CONTRACTOR'] },
     { name: 'Uživatelé', href: '/admin/users', icon: Users, roles: ['ADMIN', 'SUPPORT'] },
     { name: 'Historie', href: '/admin/history', icon: Activity, roles: ['ADMIN', 'SUPPORT'] },
-    { name: 'Analytika', href: '/admin/analytics', icon: BarChart3, roles: ['ADMIN'] },
     { name: 'Nastavení', href: '/admin/settings', icon: Settings, roles: ['ADMIN'] },
   ];
 
@@ -50,14 +50,7 @@ export async function AdminSidebar() {
       </div>
 
       <div className="p-4 border-t border-white/10">
-        <div className="px-3 py-2 mb-2 bg-white/5 rounded-lg border border-white/5">
-            <p className="text-xs text-gray-500">Verze systému</p>
-            <p className="text-xs font-mono text-white">v1.0.0-beta</p>
-        </div>
-        <Link href="/" className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-          <LogOut className="w-5 h-5" />
-          Odhlásit se
-        </Link>
+        <LogoutButton />
       </div>
     </div>
   );

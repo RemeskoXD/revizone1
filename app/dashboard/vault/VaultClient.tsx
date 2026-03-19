@@ -1,6 +1,6 @@
 'use client';
 
-import { ShieldCheck, FileText, Download, Search, Calendar } from 'lucide-react';
+import { ShieldCheck, FileText, Download, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function VaultClient({ completedOrders }: { completedOrders: any[] }) {
@@ -15,17 +15,66 @@ export default function VaultClient({ completedOrders }: { completedOrders: any[
 
       {/* Stats / Info */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-brand-yellow/20 to-brand-yellow/5 border border-brand-yellow/20 rounded-xl p-6">
-            <div className="flex items-center gap-4">
-                <div className="p-3 bg-brand-yellow text-black rounded-lg">
+        {(() => {
+          const now = new Date();
+          const expiredCount = completedOrders.filter(o => {
+            const d = new Date(o.updatedAt);
+            const expires = new Date(d);
+            expires.setFullYear(expires.getFullYear() + 3);
+            return expires < now;
+          }).length;
+          const soonCount = completedOrders.filter(o => {
+            const d = new Date(o.updatedAt);
+            const expires = new Date(d);
+            expires.setFullYear(expires.getFullYear() + 3);
+            const monthsLeft = (expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
+            return monthsLeft > 0 && monthsLeft <= 6;
+          }).length;
+
+          if (expiredCount > 0) {
+            return (
+              <div className="bg-gradient-to-br from-red-500/20 to-red-500/5 border border-red-500/20 rounded-xl p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-500 text-white rounded-lg">
                     <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-red-500 font-medium">{expiredCount} {expiredCount === 1 ? 'revize expirovala' : 'revizí expirovalo'}</p>
+                    <p className="text-sm text-red-500/70">Objednejte novou revizi</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          if (soonCount > 0) {
+            return (
+              <div className="bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/20 rounded-xl p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-orange-500 text-white rounded-lg">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-orange-500 font-medium">{soonCount} {soonCount === 1 ? 'revize brzy vyprší' : 'revizí brzy vyprší'}</p>
+                    <p className="text-sm text-orange-500/70">Platnost do 6 měsíců</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="bg-gradient-to-br from-brand-yellow/20 to-brand-yellow/5 border border-brand-yellow/20 rounded-xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-brand-yellow text-black rounded-lg">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
-                    <p className="text-brand-yellow font-medium">Všechny revize platné</p>
-                    <p className="text-sm text-brand-yellow/70">Žádná revize neexpirovala</p>
+                  <p className="text-brand-yellow font-medium">{completedOrders.length === 0 ? 'Žádné revize' : 'Všechny revize platné'}</p>
+                  <p className="text-sm text-brand-yellow/70">{completedOrders.length === 0 ? 'Zatím nemáte žádné dokončené revize' : 'Žádná revize neexpirovala'}</p>
                 </div>
+              </div>
             </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* Documents Grid */}

@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
-import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, PlusCircle, X, Package } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, PlusCircle, X } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -75,10 +78,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
 
             <div className="p-4 border-t border-white/10">
-                <Link href="/" className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
                 Odhlásit se
-                </Link>
+                </button>
             </div>
         </div>
     </>

@@ -13,7 +13,6 @@ import {
   Paperclip,
   Download,
   User,
-  MoreVertical,
   ShieldCheck,
   Building
 } from 'lucide-react';
@@ -108,9 +107,7 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
                 <option value="CANCELLED">Zrušeno</option>
               </select>
             )}
-            <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                <MoreVertical className="w-5 h-5" />
-            </button>
+            
         </div>
       </div>
 

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ message: 'Unauthorized - Admin only' }, { status: 401 });
+    }
     // Create default admin
     const adminEmail = "admin@revizone.cz";
     const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });

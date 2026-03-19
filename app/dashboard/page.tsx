@@ -31,29 +31,44 @@ export default async function DashboardPage() {
     redirect('/realty');
   }
 
-  let orders;
-  let activeOrdersCount;
-  let completedOrdersCount;
-
-  // Only CUSTOMER role should reach here
-  orders = await prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: { customerId: session.user.id },
     orderBy: { createdAt: 'desc' },
     take: 5,
   });
-  activeOrdersCount = await prisma.order.count({
+  const activeOrdersCount = await prisma.order.count({
     where: { customerId: session.user.id, status: { not: 'COMPLETED' } },
   });
-  completedOrdersCount = await prisma.order.count({
+  const completedOrdersCount = await prisma.order.count({
     where: { customerId: session.user.id, status: 'COMPLETED' },
   });
+
+  const completedOrders = await prisma.order.findMany({
+    where: { customerId: session.user.id, status: 'COMPLETED' },
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  let nearestExpiration: string | null = null;
+  const now = new Date();
+  let closestDays = Infinity;
+  for (const order of completedOrders) {
+    const expires = new Date(order.updatedAt);
+    expires.setFullYear(expires.getFullYear() + 3);
+    const daysLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysLeft < closestDays) {
+      closestDays = daysLeft;
+      nearestExpiration = expires.toLocaleDateString('cs-CZ');
+    }
+  }
 
   return (
     <DashboardClient 
       user={session.user} 
       orders={orders} 
       activeOrdersCount={activeOrdersCount} 
-      completedOrdersCount={completedOrdersCount} 
+      completedOrdersCount={completedOrdersCount}
+      nearestExpiration={nearestExpiration}
+      nearestExpirationDays={closestDays === Infinity ? null : closestDays}
     />
   );
 }

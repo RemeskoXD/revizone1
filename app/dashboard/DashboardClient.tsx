@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { AnimatedItem } from '@/components/AnimatedItem';
 
-export default function DashboardClient({ user, orders, activeOrdersCount, completedOrdersCount }: any) {
+export default function DashboardClient({ user, orders, activeOrdersCount, completedOrdersCount, nearestExpiration, nearestExpirationDays }: any) {
   const router = useRouter();
 
   return (
@@ -30,10 +30,15 @@ export default function DashboardClient({ user, orders, activeOrdersCount, compl
         <AnimatedItem delay={0.1}>
           <StatCard 
               title="Nejbližší expirace" 
-              value="N/A" 
-              description="Zatím žádné expirující revize"
+              value={nearestExpiration || 'Žádné'} 
+              description={
+                nearestExpirationDays === null ? 'Zatím žádné dokončené revize' :
+                nearestExpirationDays <= 0 ? 'Revize expirovala!' :
+                nearestExpirationDays <= 90 ? `Zbývá ${nearestExpirationDays} dní` :
+                'Revize v platnosti'
+              }
               icon={AlertTriangle}
-              alert={false}
+              alert={nearestExpirationDays !== null && nearestExpirationDays <= 90}
           />
         </AnimatedItem>
         <AnimatedItem delay={0.2}>

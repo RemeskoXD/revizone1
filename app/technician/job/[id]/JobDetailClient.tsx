@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, MapPin, User, Phone, Calendar, Upload, FileText, CheckCircle2, AlertTriangle, Briefcase, DollarSign } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Phone, Calendar, Upload, FileText, CheckCircle2, Briefcase, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -230,9 +230,9 @@ export default function JobDetailClient({ order, currentUser }: { order: any, cu
                         </div>
                         <h4 className="text-xl font-bold text-white">Revize dokončena</h4>
                         <p className="text-gray-400 mt-2">Zpráva byla úspěšně nahrána a odeslána zákazníkovi.</p>
-                        <button onClick={() => alert('Funkce úpravy souborů zatím není implementována.')} className="mt-6 text-sm text-gray-500 hover:text-white underline">
-                            Upravit nahrané soubory
-                        </button>
+                        <p className="mt-6 text-sm text-gray-600">
+                            Zakázka byla úspěšně dokončena.
+                        </p>
                     </div>
                 ) : status === 'in_progress' ? (
                     <div className="space-y-6">
@@ -287,21 +287,6 @@ export default function JobDetailClient({ order, currentUser }: { order: any, cu
         {/* Sidebar Info */}
         <div className="space-y-6">
             <ChecklistSection orderId={order.id} isTechnician={true} />
-
-            <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
-                <div className="flex gap-3">
-                    <AlertTriangle className="w-5 h-5 text-blue-500 shrink-0" />
-                    <div>
-                        <h4 className="text-sm font-bold text-blue-500">Upozornění</h4>
-                        <p className="text-xs text-gray-400 mt-1">
-                            U tohoto objektu byla v minulé revizi nalezena závada na hlavním jističi. Zkontrolujte prosím opravu.
-                        </p>
-                        <button onClick={() => alert('Funkce zobrazení minulé zprávy zatím není implementována.')} className="text-xs text-blue-400 hover:text-blue-300 underline mt-2">
-                            Zobrazit minulou zprávu
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             <ChatSection orderId={order.id} currentUserId={currentUser.id} />
         </div>

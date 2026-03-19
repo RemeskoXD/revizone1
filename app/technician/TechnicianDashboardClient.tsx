@@ -128,7 +128,7 @@ export default function TechnicianDashboardClient({ user, newRequestsCount, open
                               <p className="text-xs text-gray-400 mt-1">{req.address}</p>
                           </div>
                           <div className="text-right">
-                              <p className="text-sm font-bold text-brand-yellow">Dle ceníku</p>
+                              <p className="text-sm font-bold text-brand-yellow">{req.price ? `${req.price.toLocaleString('cs-CZ')} Kč` : 'Dle dohody'}</p>
                               <Link href={`/technician/job/${req.readableId}`} className="text-xs text-white hover:underline mt-1 inline-block">Detail</Link>
                           </div>
                       </motion.div>

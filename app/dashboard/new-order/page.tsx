@@ -331,7 +331,7 @@ export default function NewOrderPage() {
                       <div>
                         <h4 className="font-medium text-brand-yellow">Expresní revize?</h4>
                         <p className="text-sm text-gray-400 mt-1">
-                          Potřebujete revizi do 24 hodin? Zavolejte nám přímo na <a href="tel:+420123456789" className="text-white hover:underline">+420 123 456 789</a>.
+                          Potřebujete revizi co nejdříve? V poznámce uveďte &quot;EXPRESNÍ&quot; a my se vám ozveme s nejbližším možným termínem.
                         </p>
                       </div>
                     </div>

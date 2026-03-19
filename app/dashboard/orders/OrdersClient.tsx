@@ -1,11 +1,30 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { FileText, Search, Filter, Download, MoreVertical } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { FileText, Search, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 
 export default function OrdersClient({ orders }: { orders: any[] }) {
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch = !searchQuery || 
+        order.readableId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.serviceType?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchQuery, statusFilter]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -14,30 +33,34 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
           <p className="text-gray-400">Přehled všech vašich revizí a jejich stavu.</p>
         </div>
         <div className="flex gap-3">
-            <button className="px-4 py-2 bg-[#1A1A1A] text-white border border-white/10 rounded-lg flex items-center gap-2 hover:bg-[#252525] transition-colors">
-                <Filter className="w-4 h-4" /> Filtrovat
-            </button>
             <Link href="/dashboard/new-order" className="px-4 py-2 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors">
                 Nová objednávka
             </Link>
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
       <div className="bg-[#1A1A1A] p-4 rounded-xl border border-white/5 flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Hledat podle ID, adresy nebo typu..." 
                 className="w-full bg-[#111] border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-yellow/50 transition-colors"
             />
         </div>
-        <select className="bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:border-brand-yellow/50 outline-none">
+        <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:border-brand-yellow/50 outline-none"
+        >
             <option value="all">Všechny stavy</option>
-            <option value="pending">Čeká na vyřízení</option>
-            <option value="scheduled">Naplánováno</option>
-            <option value="completed">Dokončeno</option>
+            <option value="PENDING">Čeká na vyřízení</option>
+            <option value="IN_PROGRESS">Probíhá</option>
+            <option value="COMPLETED">Dokončeno</option>
+            <option value="NEEDS_REVISION">K přepracování</option>
+            <option value="CANCELLED">Zrušeno</option>
         </select>
       </div>
 
@@ -57,14 +80,14 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                    {orders.length === 0 ? (
+                    {filteredOrders.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                          Zatím nemáte žádné objednávky.
+                          {searchQuery || statusFilter !== 'all' ? 'Žádné objednávky neodpovídají filtru.' : 'Zatím nemáte žádné objednávky.'}
                         </td>
                       </tr>
                     ) : (
-                      orders.map((order, index) => (
+                      filteredOrders.map((order, index) => (
                         <motion.tr 
                           key={order.id} 
                           initial={{ opacity: 0, y: 10 }}

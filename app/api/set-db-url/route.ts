@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
   const dbUser = process.env.DB_USER;
   const dbPassword = process.env.DB_PASSWORD;
   const dbHost = process.env.DB_HOST;

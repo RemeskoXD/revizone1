@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User as UserIcon, Lock, Bell, Save, Shield, Briefcase, Building } from 'lucide-react';
+import { User as UserIcon, Lock, Bell, Save, Briefcase, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from '@prisma/client';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,10 @@ export default function SettingsClient({ user }: { user: User }) {
   const [firstName, setFirstName] = useState(user.name?.split(' ')[0] || '');
   const [lastName, setLastName] = useState(user.name?.split(' ').slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user.phone || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const router = useRouter();
 
   const handleSave = async (e: React.FormEvent) => {
@@ -280,8 +284,7 @@ export default function SettingsClient({ user }: { user: User }) {
                           <UserIcon className="w-8 h-8 text-gray-400" />
                       </div>
                       <div>
-                          <button type="button" onClick={() => alert('Otevírám výběr fotky...')} className="text-sm text-brand-yellow hover:underline font-medium">Změnit fotku</button>
-                          <p className="text-xs text-gray-500 mt-1">JPG, PNG max. 2MB</p>
+                          <p className="text-sm text-gray-500">Profilová fotka</p>
                       </div>
                   </div>
 
@@ -335,37 +338,62 @@ export default function SettingsClient({ user }: { user: User }) {
               {activeTab === 'security' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <h3 className="text-lg font-medium text-white mb-4">Změna hesla</h3>
+                  {passwordMessage && (
+                    <div className={cn(
+                      "p-3 rounded-lg text-sm",
+                      passwordMessage.type === 'success' ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                    )}>
+                      {passwordMessage.text}
+                    </div>
+                  )}
                   <div className="space-y-4 max-w-md">
                       <div className="space-y-2">
                           <label className="text-sm font-medium text-gray-400">Současné heslo</label>
-                          <input type="password" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+                          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
                       </div>
                       <div className="space-y-2">
                           <label className="text-sm font-medium text-gray-400">Nové heslo</label>
-                          <input type="password" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+                          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
                       </div>
                       <div className="space-y-2">
                           <label className="text-sm font-medium text-gray-400">Potvrzení nového hesla</label>
-                          <input type="password" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+                          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
                       </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-white/5">
-                      <h3 className="text-lg font-medium text-white mb-4">Dvoufázové ověření (2FA)</h3>
-                      <div className="flex items-center justify-between p-4 bg-[#111] rounded-lg border border-white/10">
-                          <div className="flex items-center gap-3">
-                              <div className="p-2 bg-brand-yellow/10 rounded-lg">
-                                  <Shield className="w-5 h-5 text-brand-yellow" />
-                              </div>
-                              <div>
-                                  <p className="text-white font-medium">Zabezpečit účet</p>
-                                  <p className="text-sm text-gray-500">Přidá další vrstvu ochrany při přihlášení.</p>
-                              </div>
-                          </div>
-                          <button type="button" onClick={() => alert('Otevírám nastavení 2FA...')} className="px-3 py-1.5 text-sm bg-white/5 hover:bg-white/10 text-white rounded-md transition-colors">
-                              Nastavit
-                          </button>
-                      </div>
+                      <button
+                        type="button"
+                        disabled={isLoading || !currentPassword || !newPassword || !confirmPassword}
+                        onClick={async () => {
+                          if (newPassword !== confirmPassword) {
+                            setPasswordMessage({ type: 'error', text: 'Nová hesla se neshodují.' });
+                            return;
+                          }
+                          setIsLoading(true);
+                          setPasswordMessage(null);
+                          try {
+                            const res = await fetch('/api/user/password', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ currentPassword, newPassword }),
+                            });
+                            const data = await res.json();
+                            if (res.ok) {
+                              setPasswordMessage({ type: 'success', text: 'Heslo bylo úspěšně změněno.' });
+                              setCurrentPassword('');
+                              setNewPassword('');
+                              setConfirmPassword('');
+                            } else {
+                              setPasswordMessage({ type: 'error', text: data.message || 'Došlo k chybě.' });
+                            }
+                          } catch {
+                            setPasswordMessage({ type: 'error', text: 'Došlo k chybě při změně hesla.' });
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        className="w-full py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50"
+                      >
+                        {isLoading ? 'Měním heslo...' : 'Změnit heslo'}
+                      </button>
                   </div>
                 </div>
               )}
