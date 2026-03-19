@@ -14,7 +14,8 @@ export async function POST(req: Request) {
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: { id: true },
     });
 
     if (existingUser) {
@@ -34,7 +35,8 @@ export async function POST(req: Request) {
       }
 
       const adminWithCode = await prisma.user.findFirst({
-        where: { inviteCode, role: 'ADMIN' }
+        where: { inviteCode, role: 'ADMIN' },
+        select: { id: true },
       });
 
       if (!adminWithCode) {
@@ -55,6 +57,11 @@ export async function POST(req: Request) {
         role: role || "CUSTOMER",
         // Generate a random invite code for companies
         inviteCode: role === "COMPANY_ADMIN" ? Math.random().toString(36).substring(2, 8).toUpperCase() : null,
+      }
+      select: {
+        id: true,
+        email: true,
+        role: true,
       }
     });
 

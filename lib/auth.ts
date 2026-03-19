@@ -16,15 +16,50 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Neplatné přihlašovací údaje");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+        type UserAuth = {
+          id: string;
+          email: string | null;
+          name: string | null;
+          password: string | null;
+          role: string;
+          // Optional, until DB is migrated. When selected, it will be present.
+          isDeleted?: boolean;
+        };
+
+        // Important: some DBs may still not have `User.isDeleted` column yet.
+        // We try to select it first, and fall back to a query without it to keep login working.
+        let user: UserAuth | null = null;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+              isDeleted: true,
+            },
+          });
+        } catch {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+            },
+          });
+        }
 
         if (!user || !user.password) {
           throw new Error("Uživatel nenalezen");
         }
 
-        if (user.isDeleted) {
+        const isDeleted = (user as any)?.isDeleted === true;
+        if (isDeleted) {
           throw new Error("Účet byl deaktivován");
         }
 
