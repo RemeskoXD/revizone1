@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import prisma from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export async function POST(
@@ -22,7 +22,6 @@ export async function POST(
       return NextResponse.json({ error: 'Heslo je vyžadováno' }, { status: 400 });
     }
 
-    // Verify admin password
     const admin = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
@@ -37,7 +36,6 @@ export async function POST(
       return NextResponse.json({ error: 'Nesprávné heslo' }, { status: 401 });
     }
 
-    // Find the pending user
     const userToApprove = await prisma.user.findUnique({
       where: { id }
     });
@@ -46,7 +44,6 @@ export async function POST(
       return NextResponse.json({ error: 'Uživatel nenalezen' }, { status: 404 });
     }
 
-    // Determine new role
     let newRole = '';
     if (userToApprove.role === 'PENDING_SUPPORT') {
       newRole = 'SUPPORT';
@@ -56,7 +53,6 @@ export async function POST(
       return NextResponse.json({ error: 'Uživatel není ve stavu čekajícím na schválení' }, { status: 400 });
     }
 
-    // Update user role
     await prisma.user.update({
       where: { id },
       data: { role: newRole as any }
