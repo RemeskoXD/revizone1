@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         role: role || "CUSTOMER",
         // Generate a random invite code for companies
         inviteCode: role === "COMPANY_ADMIN" ? Math.random().toString(36).substring(2, 8).toUpperCase() : null,
-      }
+      },
       select: {
         id: true,
         email: true,
