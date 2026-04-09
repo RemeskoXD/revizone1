@@ -11,7 +11,7 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
   '/dashboard': ['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'SVJ', 'ADMIN', 'SUPPORT', 'CONTRACTOR'],
 };
 
-const PUBLIC_ROUTES = ['/login', '/register', '/success', '/new-order', '/claim-property', '/share', '/api/public', '/api/auth', '/api/banner', '/api/revisions'];
+const PUBLIC_ROUTES = ['/login', '/register', '/success', '/new-order', '/claim-property', '/share', '/test', '/api/public', '/api/auth', '/api/banner', '/api/revisions', '/api/health'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
