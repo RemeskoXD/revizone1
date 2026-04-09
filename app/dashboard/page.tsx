@@ -76,7 +76,7 @@ export default async function DashboardPage() {
       categoryName: order.revisionCategory?.name || null,
       result: order.revisionResult,
       hasReport: !!order.reportFile,
-      status: daysLeft <= 0 ? 'expired' : daysLeft <= 90 ? 'warning' : daysLeft <= 180 ? 'soon' : 'ok',
+      status: (daysLeft <= 0 ? 'expired' : daysLeft <= 90 ? 'warning' : daysLeft <= 180 ? 'soon' : 'ok') as WatchdogItem['status'],
     };
   }).sort((a: WatchdogItem, b: WatchdogItem) => a.daysLeft - b.daysLeft);
 
