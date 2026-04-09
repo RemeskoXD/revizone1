@@ -1,6 +1,6 @@
 'use client';
 
-import { User, ShieldAlert } from 'lucide-react';
+import { User, ShieldAlert, Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { NotificationBell } from '@/components/NotificationBell';
 
@@ -10,7 +10,11 @@ const ROLE_LABELS: Record<string, string> = {
   CONTRACTOR: 'Dodavatel',
 };
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const { data: session } = useSession();
 
   const userName = session?.user?.name || 'Admin';
@@ -19,8 +23,14 @@ export function AdminHeader() {
   return (
     <header className="h-16 border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
         <span className="md:hidden font-bold text-white tracking-tight mr-2">REVIZONE APLIKACE</span>
-        <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
             <ShieldAlert className="w-3 h-3 text-red-500" />
             <span className="text-xs font-medium text-red-500">ADMINISTRÁTORSKÝ PŘÍSTUP</span>
         </div>

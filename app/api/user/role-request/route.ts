@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     const { requestedRole } = await req.json();
 
-    if (!['TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'PRODUCT_MANAGER'].includes(requestedRole)) {
+    if (!['TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'SVJ', 'PRODUCT_MANAGER'].includes(requestedRole)) {
       return NextResponse.json({ message: 'Invalid role requested' }, { status: 400 });
     }
 

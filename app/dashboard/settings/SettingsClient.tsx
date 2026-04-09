@@ -16,6 +16,7 @@ export default function SettingsClient({ user }: { user: User }) {
   const [firstName, setFirstName] = useState(user.name?.split(' ')[0] || '');
   const [lastName, setLastName] = useState(user.name?.split(' ').slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user.phone || '');
+  const [emailNotifs, setEmailNotifs] = useState((user as any).emailNotifications !== false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +31,7 @@ export default function SettingsClient({ user }: { user: User }) {
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, phone }),
+        body: JSON.stringify({ firstName, lastName, phone, emailNotifications: emailNotifs }),
       });
       
       if (res.ok) {
@@ -166,6 +167,7 @@ export default function SettingsClient({ user }: { user: User }) {
                       <option value="COMPANY_ADMIN">Partner (Delegátor)</option>
                       <option value="PRODUCT_MANAGER">Produkt manažer</option>
                       <option value="REALTY">Realitní kancelář</option>
+                      <option value="SVJ">Správce SVJ</option>
                     </select>
                   </div>
                   
@@ -330,6 +332,26 @@ export default function SettingsClient({ user }: { user: User }) {
                   <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-400">Fakturační adresa</label>
                       <input type="text" defaultValue="" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-3">E-mailová upozornění</h4>
+                    <label className="flex items-center justify-between p-4 bg-[#111] border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium text-white">Upozornění na expiraci revizí</p>
+                        <p className="text-xs text-gray-500 mt-1">E-maily 30, 14, 7, 2 a 1 den před vypršením platnosti revize</p>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={emailNotifs}
+                          onChange={(e) => setEmailNotifs(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-brand-yellow transition-colors" />
+                        <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                      </div>
+                    </label>
                   </div>
                 </div>
               )}

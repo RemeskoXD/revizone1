@@ -3,6 +3,7 @@ export const ROLES = {
   TECHNICIAN: 'TECHNICIAN',
   COMPANY_ADMIN: 'COMPANY_ADMIN',
   REALTY: 'REALTY',
+  SVJ: 'SVJ',
   ADMIN: 'ADMIN',
   SUPPORT: 'SUPPORT',
   CONTRACTOR: 'CONTRACTOR',
@@ -34,6 +35,7 @@ export const ROLE_LABELS: Record<string, string> = {
   TECHNICIAN: 'Revizní technik',
   COMPANY_ADMIN: 'Správce firmy',
   REALTY: 'Realitní kancelář',
+  SVJ: 'Správce SVJ',
   ADMIN: 'Administrátor',
   SUPPORT: 'Support',
   CONTRACTOR: 'Dodavatel',
@@ -55,5 +57,6 @@ export const ROUTE_ACCESS: Record<string, string[]> = {
   '/company': [ROLES.COMPANY_ADMIN],
   '/technician': [ROLES.TECHNICIAN],
   '/realty': [ROLES.REALTY],
-  '/dashboard': [ROLES.CUSTOMER, ROLES.REALTY, ROLES.TECHNICIAN, ROLES.COMPANY_ADMIN, ROLES.ADMIN, ROLES.SUPPORT, ROLES.CONTRACTOR],
+  '/svj': [ROLES.SVJ],
+  '/dashboard': [ROLES.CUSTOMER, ROLES.REALTY, ROLES.SVJ, ROLES.TECHNICIAN, ROLES.COMPANY_ADMIN, ROLES.ADMIN, ROLES.SUPPORT, ROLES.CONTRACTOR],
 };

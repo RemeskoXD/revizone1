@@ -346,6 +346,19 @@ export default function JobDetailClient({ order, currentUser, addressHistory = [
                 <ClipboardCheck className="w-5 h-5 text-brand-yellow" /> Dokončení revize
               </h3>
 
+              {/* Built-in Report Form */}
+              <Link href={`/technician/job/${order.readableId}/report`}
+                className="flex items-center justify-center gap-3 p-4 bg-brand-yellow/10 border-2 border-brand-yellow/30 rounded-xl text-brand-yellow font-semibold hover:bg-brand-yellow/20 transition-colors">
+                <FileText className="w-5 h-5" />
+                Vyplnit revizní zprávu online
+              </Link>
+
+              <div className="flex items-center gap-3 text-gray-500">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs">nebo nahrajte vlastní PDF</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
               {/* PDF Upload */}
               <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-brand-yellow/50 hover:bg-white/[0.02] transition-colors relative">
                 <input type="file" accept=".pdf" onChange={(e) => e.target.files?.[0] && setFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />

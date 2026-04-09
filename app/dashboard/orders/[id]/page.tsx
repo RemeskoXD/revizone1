@@ -17,7 +17,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     where: { readableId: id },
     include: {
       technician: { select: { name: true, email: true, phone: true } },
-      company: { select: { name: true, email: true, phone: true } }
+      company: { select: { name: true, email: true, phone: true } },
+      property: { select: { ownerId: true } },
     }
   });
 
@@ -25,14 +26,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     return notFound();
   }
 
-  // Authorization check
   const isCustomer = order.customerId === session.user.id;
   const isAssignedTech = order.technicianId === session.user.id;
   const isAssignedCompany = order.companyId === session.user.id;
   const isAdmin = ['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role);
   const isPublic = order.isPublic && (session.user.role === 'TECHNICIAN' || session.user.role === 'COMPANY_ADMIN');
+  const isPropertyOwner = order.property?.ownerId === session.user.id;
   
-  // Check if the order is assigned to a technician belonging to this company
   let isCompanyTechOrder = false;
   if (session.user.role === 'COMPANY_ADMIN' && order.technicianId) {
     const tech = await prisma.user.findUnique({ where: { id: order.technicianId } });
@@ -41,7 +41,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     }
   }
 
-  if (!isCustomer && !isAssignedTech && !isAssignedCompany && !isAdmin && !isPublic && !isCompanyTechOrder) {
+  if (!isCustomer && !isAssignedTech && !isAssignedCompany && !isAdmin && !isPublic && !isCompanyTechOrder && !isPropertyOwner) {
     return notFound();
   }
 

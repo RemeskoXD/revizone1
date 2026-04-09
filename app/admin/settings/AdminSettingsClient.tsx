@@ -136,6 +136,22 @@ export default function AdminSettingsClient({ user, teamMembers, systemConfig = 
     }
   };
 
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (!confirm(`Opravdu chcete deaktivovat člena "${memberName}"? Tato akce je nevratná.`)) return;
+    try {
+      const res = await fetch(`/api/admin/users/${memberId}`, { method: 'DELETE' });
+      if (res.ok) {
+        alert('Člen týmu byl deaktivován.');
+        router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Chyba při odstraňování.');
+      }
+    } catch {
+      alert('Došlo k chybě.');
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'SUPPORT':
@@ -360,6 +376,7 @@ export default function AdminSettingsClient({ user, teamMembers, systemConfig = 
                       </button>
                     )}
                     <button
+                      onClick={() => handleRemoveMember(member.id, member.name || member.email)}
                       className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Odstranit"
                     >

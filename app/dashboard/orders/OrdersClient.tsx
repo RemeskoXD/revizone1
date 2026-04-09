@@ -93,9 +93,14 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className="hover:bg-white/[0.02] transition-colors group"
+                          className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                          onClick={() => window.location.href = `/dashboard/orders/${order.readableId}`}
                         >
-                            <td className="px-6 py-4 font-mono text-gray-500">#{order.readableId}</td>
+                            <td className="px-6 py-4 font-mono text-gray-500">
+                                <Link href={`/dashboard/orders/${order.readableId}`} className="hover:text-brand-yellow transition-colors">
+                                    #{order.readableId}
+                                </Link>
+                            </td>
                             <td className="px-6 py-4 font-medium text-white">
                                 <div className="flex items-center gap-2">
                                     <div className="p-1.5 rounded bg-white/5 text-gray-400 group-hover:text-brand-yellow transition-colors">
@@ -125,8 +130,11 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                             </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
+                                    <Link href={`/dashboard/orders/${order.readableId}`} className="p-2 text-gray-400 hover:text-brand-yellow transition-colors rounded-lg hover:bg-white/5">
+                                        <FileText className="w-4 h-4" />
+                                    </Link>
                                     {order.reportFile && (
-                                      <a href={`/api/orders/${order.readableId}/download`} download className="p-2 text-gray-400 hover:text-brand-yellow transition-colors rounded-lg hover:bg-white/5">
+                                      <a href={`/api/orders/${order.readableId}/download`} download onClick={(e) => e.stopPropagation()} className="p-2 text-gray-400 hover:text-brand-yellow transition-colors rounded-lg hover:bg-white/5">
                                           <Download className="w-4 h-4" />
                                       </a>
                                     )}

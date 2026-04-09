@@ -1,17 +1,27 @@
 'use client';
 
-import { User } from 'lucide-react';
+import { User, Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { NotificationBell } from '@/components/NotificationBell';
 
-export function TechnicianHeader() {
+interface TechnicianHeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function TechnicianHeader({ onMenuClick }: TechnicianHeaderProps) {
   const { data: session } = useSession();
 
   return (
     <header className="h-16 border-b border-white/10 bg-[#111111] flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
         <span className="md:hidden font-bold text-white tracking-tight mr-2">REVIZONE APLIKACE</span>
-        <h2 className="text-sm font-mono text-gray-500">PARTNER PORTAL</h2>
+        <h2 className="text-sm font-mono text-gray-500 hidden md:block">PARTNER PORTAL</h2>
       </div>
 
       <div className="flex items-center gap-4">

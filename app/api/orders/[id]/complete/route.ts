@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { notifyOrderCompleted, notifyDefectCreated } from '@/lib/notifications';
+import { notifyOrderCompleted, notifyDefectCreated, sendOrderStatusEmail } from '@/lib/notifications';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -75,6 +75,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     await notifyOrderCompleted(order.id, order.readableId, order.customerId, revisionResult || 'PASS');
+    sendOrderStatusEmail(order.id, 'COMPLETED').catch(console.error);
     
     if (revisionResult === 'FAIL' || revisionResult === 'PASS_WITH_NOTES') {
       await notifyDefectCreated(order.customerId, order.readableId);

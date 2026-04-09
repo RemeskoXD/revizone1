@@ -10,6 +10,7 @@ const ROLE_LABELS: Record<string, string> = {
   TECHNICIAN: 'Revizní technik',
   COMPANY_ADMIN: 'Správce firmy',
   REALTY: 'Realitní správce',
+  SVJ: 'Správce SVJ',
   ADMIN: 'Administrátor',
   SUPPORT: 'Support',
   CONTRACTOR: 'Dodavatel',

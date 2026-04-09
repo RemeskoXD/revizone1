@@ -16,15 +16,15 @@ model User {
   phone         String?
   role          String    @default("CUSTOMER")
   isDeleted     Boolean   @default(false)
-  priority      Int       @default(0) // Higher number = higher priority for order assignment
+  priority      Int       @default(0)
+  emailNotifications Boolean @default(true)
   
-  // For Technicians belonging to a Company
   companyId     String?
   company       User?     @relation("CompanyTechnicians", fields: [companyId], references: [id])
   technicians   User[]    @relation("CompanyTechnicians")
   
   inviteCode    String?   @unique
-  commissionRate Float?   @default(100) // Percentage of order price the technician gets
+  commissionRate Float?   @default(100)
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -110,9 +110,11 @@ model Order {
   scheduledNote String?   @db.Text // Technician's note about scheduling
   confirmedAddress String? // Technician can update the address
   revisionResult String?  // PASS, PASS_WITH_NOTES, FAIL
-  revisionNotes  String?  @db.Text // Technician's findings/notes
-  nextRevisionDate DateTime? // Manually set by technician
-  completedAt    DateTime? // When the revision was actually completed
+  revisionNotes  String?  @db.Text
+  nextRevisionDate DateTime?
+  completedAt    DateTime?
+  cancelToken    String?  @unique
+  lastExpiryEmailDays Int? // Last sent reminder: 30, 14, 7, 2, 1, 0 (expired), -1 (post-expired)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -254,4 +256,21 @@ model OrderPhoto {
   caption   String?
   uploadedBy String
   createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  type      String   @default("GENERAL")
+  status    String   @default("SENT")
+  messageId String?
+  error     String?  @db.Text
+  orderId   String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([to])
+  @@index([type])
+  @@index([createdAt])
 }

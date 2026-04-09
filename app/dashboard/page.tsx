@@ -27,6 +27,7 @@ export default async function DashboardPage() {
   if (session.user.role === 'COMPANY_ADMIN') redirect('/company');
   if (session.user.role === 'TECHNICIAN') redirect('/technician');
   if (session.user.role === 'REALTY') redirect('/realty');
+  if (session.user.role === 'SVJ') redirect('/svj');
 
   const [recentOrders, activeOrdersCount, completedOrdersCount, completedOrders, defectTasks] = await Promise.all([
     prisma.order.findMany({

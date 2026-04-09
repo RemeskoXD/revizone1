@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { sendOrderStatusEmail } from '@/lib/notifications';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,6 +27,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         technician: true,
       }
     });
+
+    sendOrderStatusEmail(id, status).catch(console.error);
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {

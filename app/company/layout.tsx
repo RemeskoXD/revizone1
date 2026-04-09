@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Briefcase, Users, FileText, Settings, DollarSign, Radio } from 'lucide-react';
 import { PageTransition } from '@/components/PageTransition';
 import { LogoutButton } from '@/components/LogoutButton';
+import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
 
 export default async function CompanyLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -13,7 +14,7 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
 
   return (
     <div className="min-h-screen bg-black text-white flex">
-      <aside className="w-64 bg-[#111] border-r border-white/5 flex-col hidden md:flex">
+      <MobileSidebarToggle>
         <div className="p-6">
           <Link href="/company" className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <div className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center">
@@ -57,7 +58,7 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
           </Link>
           <LogoutButton />
         </div>
-      </aside>
+      </MobileSidebarToggle>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 md:p-8">

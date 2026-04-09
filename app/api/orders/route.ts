@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sendMail } from "@/lib/mail";
+import { orderConfirmationEmail } from "@/lib/email-templates";
+import crypto from "crypto";
 
 export async function GET(req: Request) {
   try {
@@ -104,6 +107,8 @@ export async function POST(req: Request) {
       default: price = 1500;
     }
 
+    const cancelToken = crypto.randomBytes(24).toString('hex');
+
     const orderData: any = {
       readableId,
       customerId: session.user.id,
@@ -116,6 +121,7 @@ export async function POST(req: Request) {
       reportFile: reportFile || null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,
       revisionCategoryId: revisionCategoryId || null,
+      cancelToken,
     };
 
     if (serviceType !== 'vlastni_revize') {
@@ -148,6 +154,24 @@ export async function POST(req: Request) {
     const order = await prisma.order.create({
       data: orderData
     });
+
+    if (serviceType !== 'vlastni_revize') {
+      const customer = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true, emailNotifications: true },
+      });
+      if (customer?.email && customer.emailNotifications) {
+        const emailData = orderConfirmationEmail({
+          readableId: order.readableId,
+          serviceType: order.serviceType,
+          address: order.address,
+          price: order.price,
+          preferredDate: order.preferredDate?.toISOString() || null,
+          cancelToken,
+        });
+        sendMail({ to: customer.email, ...emailData }).catch(console.error);
+      }
+    }
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

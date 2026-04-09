@@ -15,19 +15,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const order = await prisma.order.findUnique({
       where: { readableId: id },
+      include: { property: { select: { ownerId: true } } },
     });
 
     if (!order) {
       return NextResponse.json({ message: 'Order not found' }, { status: 404 });
     }
 
-    // Check authorization: Customer, Assigned Tech, Assigned Company, or Admin
     const isCustomer = order.customerId === session.user.id;
     const isTech = order.technicianId === session.user.id;
     const isCompany = session.user.role === 'COMPANY_ADMIN' && order.companyId === session.user.id;
     const isAdmin = ['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(session.user.role);
+    const isPropertyOwner = order.property?.ownerId === session.user.id;
 
-    if (!isCustomer && !isTech && !isCompany && !isAdmin) {
+    if (!isCustomer && !isTech && !isCompany && !isAdmin && !isPropertyOwner) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

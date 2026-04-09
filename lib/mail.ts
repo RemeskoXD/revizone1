@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { prisma } from '@/lib/prisma';
 
 export type SendMailOptions = {
   to: string | string[];
@@ -6,6 +7,11 @@ export type SendMailOptions = {
   text?: string;
   html?: string;
   replyTo?: string;
+  meta?: {
+    type?: string;
+    orderId?: string;
+    userId?: string;
+  };
 };
 
 function smtpConfigured(): boolean {
@@ -35,45 +41,79 @@ function getTransporter(): nodemailer.Transporter | null {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    // Pro některé servery (např. vlastní VPS) může být potřeba:
-    // tls: { rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false' },
   });
 
   return transporter;
 }
 
-/**
- * Odešle e-mail přes SMTP, pokud jsou nastavené proměnné SMTP_*.
- * Pokud SMTP není nastavené, nic neposílá a vrátí { sent: false, reason: 'not_configured' }.
- */
+async function logEmail(
+  to: string,
+  subject: string,
+  status: 'SENT' | 'FAILED' | 'SKIPPED',
+  messageId?: string,
+  error?: string,
+  meta?: SendMailOptions['meta']
+) {
+  try {
+    await prisma.emailLog.create({
+      data: {
+        to,
+        subject,
+        type: meta?.type || guessType(subject),
+        status,
+        messageId: messageId || null,
+        error: error || null,
+        orderId: meta?.orderId || null,
+        userId: meta?.userId || null,
+      },
+    });
+  } catch (e) {
+    console.error('[mail] Failed to log email:', e);
+  }
+}
+
+function guessType(subject: string): string {
+  if (subject.includes('Objednávka') && subject.includes('přijata')) return 'ORDER_CONFIRMATION';
+  if (subject.includes('vyprší')) return 'EXPIRY_WARNING';
+  if (subject.includes('expirovala')) return 'EXPIRY_EXPIRED';
+  if (subject.includes('Objednávka #')) return 'ORDER_STATUS';
+  return 'GENERAL';
+}
+
 export async function sendMail(
   options: SendMailOptions
 ): Promise<{ sent: boolean; reason?: string; messageId?: string }> {
+  const toStr = Array.isArray(options.to) ? options.to.join(', ') : options.to;
   const transport = getTransporter();
+
   if (!transport) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        '[mail] SMTP není nastavené – e-mail se neodeslal:',
-        options.subject,
-        '→',
-        options.to
-      );
+      console.warn('[mail] SMTP not configured:', options.subject, '→', toStr);
     }
+    await logEmail(toStr, options.subject, 'SKIPPED', undefined, 'SMTP not configured', options.meta);
     return { sent: false, reason: 'not_configured' };
   }
 
   const from = process.env.SMTP_FROM as string;
 
-  const info = await transport.sendMail({
-    from,
-    to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
-    subject: options.subject,
-    text: options.text,
-    html: options.html,
-    replyTo: options.replyTo,
-  });
+  try {
+    const info = await transport.sendMail({
+      from,
+      to: toStr,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+      replyTo: options.replyTo,
+    });
 
-  return { sent: true, messageId: info.messageId };
+    await logEmail(toStr, options.subject, 'SENT', info.messageId, undefined, options.meta);
+    return { sent: true, messageId: info.messageId };
+  } catch (error: any) {
+    const errMsg = error?.message || String(error);
+    console.error('[mail] Send failed:', errMsg);
+    await logEmail(toStr, options.subject, 'FAILED', undefined, errMsg, options.meta);
+    return { sent: false, reason: errMsg };
+  }
 }
 
 export function isSmtpEnabled(): boolean {

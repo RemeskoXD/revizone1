@@ -7,7 +7,8 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
   '/company': ['COMPANY_ADMIN'],
   '/technician': ['TECHNICIAN'],
   '/realty': ['REALTY'],
-  '/dashboard': ['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'ADMIN', 'SUPPORT', 'CONTRACTOR'],
+  '/svj': ['SVJ'],
+  '/dashboard': ['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'SVJ', 'ADMIN', 'SUPPORT', 'CONTRACTOR'],
 };
 
 const PUBLIC_ROUTES = ['/login', '/register', '/success', '/new-order', '/claim-property', '/share', '/api/public', '/api/auth', '/api/banner', '/api/revisions'];
@@ -41,6 +42,7 @@ export async function middleware(request: NextRequest) {
           'TECHNICIAN': '/technician',
           'COMPANY_ADMIN': '/company',
           'REALTY': '/realty',
+          'SVJ': '/svj',
           'ADMIN': '/admin',
           'SUPPORT': '/admin',
           'CONTRACTOR': '/admin',

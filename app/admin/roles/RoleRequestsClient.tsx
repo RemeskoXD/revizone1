@@ -39,6 +39,7 @@ export default function RoleRequestsClient({ initialRequests }: { initialRequest
     'COMPANY_ADMIN': 'Partner (Delegátor)',
     'PRODUCT_MANAGER': 'Produkt manažer',
     'REALTY': 'Realitní kancelář',
+    'SVJ': 'Správce SVJ',
   };
 
   return (

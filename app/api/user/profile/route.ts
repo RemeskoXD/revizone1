@@ -11,16 +11,18 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { firstName, lastName, phone } = await req.json();
+    const { firstName, lastName, phone, emailNotifications } = await req.json();
 
     const name = `${firstName} ${lastName}`.trim();
 
+    const data: any = { name, phone };
+    if (typeof emailNotifications === 'boolean') {
+      data.emailNotifications = emailNotifications;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: { 
-        name,
-        phone
-      },
+      data,
     });
 
     return NextResponse.json(updatedUser, { status: 200 });

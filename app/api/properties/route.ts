@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'REALTY') {
+    if (!session || !['REALTY', 'SVJ'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { notifyOrderAssigned } from '@/lib/notifications';
+import { notifyOrderAssigned, sendOrderStatusEmail } from '@/lib/notifications';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -50,6 +50,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
 
     await notifyOrderAssigned(order.id, order.readableId, order.customerId, session.user.name || 'Technik');
+    sendOrderStatusEmail(order.id, 'PENDING').catch(console.error);
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {

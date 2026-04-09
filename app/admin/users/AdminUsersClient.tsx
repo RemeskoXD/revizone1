@@ -103,6 +103,7 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
     'COMPANY_ADMIN': 'Partner (Delegátor)',
     'PRODUCT_MANAGER': 'Produkt manažer',
     'REALTY': 'Realitní kancelář',
+    'SVJ': 'Správce SVJ',
     'CUSTOMER': 'Zákazník',
   };
 
@@ -184,6 +185,7 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
                                     <option value="COMPANY_ADMIN">Partner (Delegátor)</option>
                                     <option value="PRODUCT_MANAGER">Produkt manažer</option>
                                     <option value="REALTY">Realitní kancelář</option>
+                                    <option value="SVJ">Správce SVJ</option>
                                     <option value="ADMIN">Administrace</option>
                                   </select>
                                 ) : (

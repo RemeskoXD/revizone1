@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { sendMail } from '@/lib/mail';
+import { orderStatusEmail } from '@/lib/email-templates';
 
 type NotificationType = 'ORDER_ASSIGNED' | 'ORDER_COMPLETED' | 'REVISION_EXPIRING' | 'MESSAGE' | 'TECHNICIAN_SCHEDULED' | 'DEFECT_CREATED' | 'ORDER_STATUS_CHANGED' | 'REVIEW_RECEIVED';
 
@@ -75,4 +77,35 @@ export async function notifyReviewReceived(technicianId: string, rating: number,
     message: `Zákazník ohodnotil revizi #${orderReadableId} – ${rating}/5 hvězd.`,
     link: `/technician/job/${orderReadableId}`,
   });
+}
+
+export async function sendOrderStatusEmail(orderId: string, newStatus: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: { select: { name: true, email: true, emailNotifications: true } },
+        technician: { select: { name: true } },
+      },
+    });
+    if (!order?.customer?.email || !order.customer.emailNotifications) return;
+
+    const emailData = orderStatusEmail({
+      readableId: order.readableId,
+      serviceType: order.serviceType,
+      address: order.address,
+      newStatus,
+      technicianName: order.technician?.name,
+      scheduledDate: order.scheduledDate?.toISOString(),
+      customerName: order.customer.name,
+    });
+
+    await sendMail({
+      to: order.customer.email,
+      ...emailData,
+      meta: { type: 'ORDER_STATUS', orderId: order.id, userId: order.customerId },
+    });
+  } catch (error) {
+    console.error('Failed to send order status email:', error);
+  }
 }
