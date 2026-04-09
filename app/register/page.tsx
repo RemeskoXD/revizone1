@@ -108,7 +108,8 @@ const packages: Package[] = [
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/login";
+  const rawCallback = searchParams.get("callbackUrl") || "/login";
+  const callbackUrl = rawCallback.startsWith("/api") ? "/dashboard" : rawCallback;
   const inviteCode = searchParams.get("invite");
 
   const [step, setStep] = useState<1 | 2>(inviteCode ? 2 : 1);

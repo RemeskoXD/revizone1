@@ -10,7 +10,8 @@ import { motion } from "motion/react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = rawCallback.startsWith("/api") ? "/dashboard" : rawCallback;
   const message = searchParams.get("message");
   
   const [email, setEmail] = useState("");
