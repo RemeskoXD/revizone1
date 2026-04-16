@@ -81,6 +81,102 @@ export default function ObchodniPodminkyPage() {
           </p>
         </div>
 
+        <div className="mb-10 rounded-xl border border-white/15 bg-white/[0.04] p-4 sm:p-6">
+          <h2 className="mb-3 text-base font-semibold text-white sm:text-lg">
+            Zásady ochrany soukromí (Privacy Policy) – přehled pro uživatele a obchod Google Play
+          </h2>
+          <p className="mb-4 text-xs text-gray-500">
+            Níže je stručný popis v souladu s běžnými požadavky na zveřejnění ochrany soukromí u aplikací. Podrobnější právní
+            rámec je v části o GDPR níže.
+          </p>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Kdo jsme a kontakt</h3>
+          <ul className="mb-4 list-inside list-disc space-y-1 text-sm text-gray-300">
+            <li>
+              <strong className="text-white">Vydavatel / vývojář</strong> (jméno v záznamu v Google Play):{' '}
+              <strong className="text-white">Ludvík Remešek</strong>.
+            </li>
+            <li>
+              <strong className="text-white">Provoz služby</strong>: <strong className="text-white">ASPERSUN, s.r.o.</strong>
+            </li>
+            <li>
+              <strong className="text-white">Kontakt</strong> (dotazy k osobním údajům):{' '}
+              <a href="mailto:info@revizone.cz" className="text-brand-yellow hover:underline">
+                info@revizone.cz
+              </a>
+              .
+            </li>
+          </ul>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Typ aplikace</h3>
+          <p className="mb-4 text-sm text-gray-300">
+            <strong className="text-white">Revizone</strong> je klientské rozhraní (webová aplikace / PWA, případně balíček v
+            Google Play) pro přístup k <strong className="text-white">webové službě</strong> určené ke správě objednávek
+            revizí, komunikaci mezi objednateli a techniky či firmami, evidenci souvisejících údajů o zakázkách a souvisejícím
+            obsahu (zprávy, dokumenty, fotodokumentace u zakázek). Služba sama o sobě není náhradou za odborné provedení
+            revize; propojuje účastníky a technicky zprostředkovává proces.
+          </p>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Jaká data sbíráme a zpracováváme</h3>
+          <ul className="mb-4 list-inside list-disc space-y-2 text-sm text-gray-300">
+            <li>
+              <strong className="text-white">Účet a přihlášení:</strong> při registraci a přihlášení zpracováváme zejména{' '}
+              <strong className="text-white">e-mail</strong> a <strong className="text-white">heslo</strong> (heslo ukládáme
+              pouze v <strong className="text-white">hashované podobě</strong>), dále údaje profilu, které vyplníte (např.{' '}
+              <strong className="text-white">jméno, telefon</strong>), typ účtu (role) a údaje související s vaší rolí (např.
+              vazba na firmu, kód pozvánky u firemních účtů), stav účtu a nastavení (např. e-mailová upozornění).
+            </li>
+            <li>
+              <strong className="text-white">Objednávky a provoz zakázek:</strong> údaje o{' '}
+              <strong className="text-white">objednávkách revizí</strong> (např. adresa a popis místa, typ služby a nemovitosti,
+              poznámky, stav zakázky), <strong className="text-white">komunikace v rámci zakázky</strong> (zprávy),{' '}
+              <strong className="text-white">nahrané soubory</strong> (např. PDF revizní zprávy u zakázek) a{' '}
+              <strong className="text-white">fotodokumentace</strong> k zakázce nahraná oprávněným uživatelem (obrázky
+              ukládáme v systému vázané na danou objednávku).
+            </li>
+            <li>
+              <strong className="text-white">Nemovitosti a převody</strong> (pokud funkci používáte): údaje o evidovaných
+              nemovitostech a případných převodech dle nastavení účtu.
+            </li>
+            <li>
+              <strong className="text-white">Technické údaje a zabezpečení:</strong> při komunikaci s naším serverem mohou být
+              zpracovány mimo jiné <strong className="text-white">IP adresa</strong> (např. pro omezení zneužití / rate
+              limiting), záznamy v <strong className="text-white">provozních a chybových logách</strong> serveru a údaje
+              typické pro web (např. typ prohlížeče v hlavičkách HTTP). Webová aplikace používá{' '}
+              <strong className="text-white">cookies / úložiště relace</strong> pro udržení přihlášení (session) prostřednictvím
+              NextAuth — viz sekce o cookies níže.
+            </li>
+          </ul>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Fotoaparát a galerie</h3>
+          <p className="mb-4 text-sm text-gray-300">
+            Funkce <strong className="text-white">nahrání fotografií k zakázce</strong> (fotodokumentace) používá standardní
+            výběr souboru v prohlížeči nebo systémové rozhraní v mobilní aplikaci / PWA: můžete{' '}
+            <strong className="text-white">vybrat obrázek z galerie</strong> nebo{' '}
+            <strong className="text-white">pořídit snímek fotoaparátem</strong>, podle toho, jak to nabídne vaše zařízení a
+            operační systém. Revizone neukládá fotografie mimo účel nahrání do příslušné zakázky v rámci Služby.
+          </p>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Účel zpracování</h3>
+          <p className="mb-4 text-sm text-gray-300">
+            Hlavní účely jsou: <strong className="text-white">poskytování Služby</strong> (vedení účtu, objednávky, přiřazení
+            technikům, zobrazení stavu), <strong className="text-white">komunikace</strong> mezi uživateli ohledně zakázek,{' '}
+            <strong className="text-white">evidence a dokumentace</strong> související s revizemi v rozsahu funkcí aplikace,{' '}
+            <strong className="text-white">zabezpečení, provoz a podpora</strong> (včetně prevence zneužití). Podrobné právní
+            základy jsou v oddílu o GDPR.
+          </p>
+
+          <h3 className="mb-2 text-sm font-semibold text-brand-yellow">Třetí strany a analytika</h3>
+          <p className="text-sm text-gray-300">
+            V <strong className="text-white">aktuálně nasazené verzi</strong> webové aplikace Revizone{' '}
+            <strong className="text-white">neprovádíme měření návštěvnosti přes Google Analytics</strong> ani{' '}
+            <strong className="text-white">nesdílíme data s Firebase</strong> (např. Analytics / Crashlytics) — tyto nástroje
+            v kódu Služby nejsou integrovány. Infrastrukturu (hosting, databáze, e-mail) zajišťují vybraní poskytovatelé v roli
+            zpracovatelů; jejich přehled lze vyžádat na kontaktním e-mailu. Pokud by se v budoucnu analytika nebo nástroje třetích
+            stran doplnily, tento text a údaje v konzoli vývojáře Google Play budou aktualizovány.
+          </p>
+        </div>
+
         <div className="space-y-12">
           <Section id="uvod" title="1. Úvod a rozsah">
             <p>
@@ -203,12 +299,24 @@ export default function ObchodniPodminkyPage() {
               v rozsahu nezbytném). Seznam zpracovatelů lze vyžádat na kontaktním e-mailu.
             </p>
             <p className="font-medium text-white">9.2 Kategorie osobních údajů</p>
-            <p>Můžeme zpracovávat zejména:</p>
+            <p>
+              Rozsah v praxi odpovídá přehledu v části{' '}
+              <strong className="text-white">„Zásady ochrany soukromí (Privacy Policy) – přehled pro uživatele a obchod Google
+              Play“</strong> výše. Můžeme zpracovávat zejména:
+            </p>
             <ul className="list-inside list-disc space-y-1 pl-1">
-              <li>identifikační a kontaktní údaje (jméno, e-mail, telefon);</li>
-              <li>údaje o objednávkách a komunikaci v rámci Služby;</li>
-              <li>technické údaje (IP adresa, logy, typ zařízení, cookies / lokální úložiště pro přihlášení);</li>
-              <li>v případě nahrání dokumentů k revizím také přílohy obsahující osobní údaje, pokud je uživatel vloží.</li>
+              <li>identifikační a kontaktní údaje (jméno, e-mail, telefon) a údaje účtu včetně role a nastavení;</li>
+              <li>přihlašovací údaje: e-mail a hash hesla (heslo v nečitelné podobě);</li>
+              <li>údaje o objednávkách revizí, nemovitostech (je-li funkce použita), komunikaci v rámci zakázek a zprávách;</li>
+              <li>
+                <strong className="text-white">soubory a média</strong> nahraná uživatelem — dokumenty (např. PDF) a{' '}
+                <strong className="text-white">fotografie</strong> k zakázkám (pořízení nebo výběr z galerie přes systémové
+                rozhraní zařízení);
+              </li>
+              <li>
+                technické údaje: IP adresa u požadavků na server, provozní logy, cookies / token relace pro přihlášení
+                (NextAuth), informace z HTTP hlaviček (např. uživatelský agent prohlížeče).
+              </li>
             </ul>
             <p className="font-medium text-white">9.3 Účely a právní základy</p>
             <ul className="list-inside list-disc space-y-1 pl-1">
@@ -271,9 +379,12 @@ export default function ObchodniPodminkyPage() {
 
           <Section id="cookies" title="10. Cookies a podobné technologie">
             <p>
-              Webová část Služby může používat cookies nezbytné pro fungování přihlášení a preferencí a — po souhlasu —
-              analytické či marketingové cookies. Podrobnosti lze rozšířit samostatným „Cookie lišta“ rozhraním. V mobilní
-              aplikaci / PWA platí obdobné principy ukládání tokenů pro session.
+              Webová část Služby používá <strong className="text-white">cookies a související mechanismy</strong> potřebné pro
+              fungování přihlášení (session NextAuth / JWT) a bezpečnost. V aktuální verzi{' '}
+              <strong className="text-white">nepoužíváme Google Analytics</strong> ani jiné marketingové / analytické skripty
+              třetích stran ve zdrojovém kódu aplikace — jde primárně o technickou relaci. V mobilním klientovi / PWA platí
+              obdobné principy ukládání relace. Nepovinné cookies (např. marketing) by byly zavedeny jen s výslovným souhlasem a
+              úpravou tohoto textu.
             </p>
           </Section>
 
@@ -293,9 +404,11 @@ export default function ObchodniPodminkyPage() {
               nezbytném rozsahu.
             </p>
             <p>
-              <strong>Oprávnění aplikace:</strong> Služba žádá pouze oprávnění nezbytná pro funkce, které popisujeme v
-              obchodě aplikací (např. přístup k souborům pro nahrání dokumentů, fotoaparát pouze pokud uživatel funkci
-              aktivuje). Nepožadujeme nepřiměřený přístup k kontaktům ani poloze, pokud to není pro danou funkci nutné.
+              <strong>Oprávnění a zařízení:</strong> Pro nahrání dokumentů nebo fotografií k zakázce využívá rozhraní výběr
+              souboru; na mobilu může systém nabídnout <strong className="text-white">přístup ke galerii nebo fotoaparátu</strong>{' '}
+              v okamžiku, kdy uživatel zvolí pořízení nebo výběr obrázku — jde o standardní chování OS. Nepožadujeme trvalý přístup
+              ke kontaktům ani k poloze; geolokace v aplikaci není funkcí Služby. Popis sběru dat pro Data safety v konzoli
+              Google Play odpovídá sekci Privacy Policy výše a oddílu 9.
             </p>
             <p>
               <strong>Data safety (bezpečnost údajů):</strong> Shromažďované údaje odpovídají popisu v sekci GDPR výše.
