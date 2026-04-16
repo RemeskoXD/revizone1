@@ -45,6 +45,22 @@ model User {
   notifications   Notification[]
   customerReviews Review[]       @relation("CustomerReviews")
   technicianReviews Review[]     @relation("TechnicianReviews")
+  accountDeletionRequests AccountDeletionRequest[]
+}
+
+model AccountDeletionRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  note            String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  processedAt     DateTime?
+  processedById   String?
+
+  @@index([userId])
+  @@index([status])
 }
 
 model RoleRequest {

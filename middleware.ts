@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { getNextAuthJwtSecret, isProductionAuthMisconfigured } from '@/lib/jwt-secret';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
+import { isPublicPathname } from '@/lib/public-routes';
 
 /** POST z NextAuth při přihlášení heslem (Credentials provider). */
 function isCredentialsSignInPost(request: NextRequest): boolean {
@@ -24,8 +25,6 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
   '/svj': ['SVJ'],
   '/dashboard': ['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'SVJ', 'ADMIN', 'SUPPORT', 'CONTRACTOR'],
 };
-
-const PUBLIC_ROUTES = ['/login', '/register', '/registertest', '/success', '/new-order', '/claim-property', '/share', '/test', '/obchodnipodminky', '/api/public', '/api/auth', '/api/banner', '/api/revisions', '/api/health'];
 
 /** Only real static assets — never use `pathname.includes('.')` (that bypassed auth for arbitrary URLs). */
 const STATIC_FILE = /\.(?:ico|png|jpg|jpeg|gif|webp|avif|svg|css|js|map|txt|xml|woff2?|ttf|eot|webmanifest)$/i;
@@ -59,7 +58,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route)) || pathname === '/') {
+  if (isPublicPathname(pathname) || pathname === '/') {
     return NextResponse.next();
   }
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { User as UserIcon, Lock, Bell, Save, Briefcase, Building } from 'lucide-react';
+import Link from 'next/link';
+import { User as UserIcon, Lock, Bell, Save, Briefcase, Building, UserX, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from '@prisma/client';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,11 @@ export default function SettingsClient({ user }: { user: User }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteNote, setDeleteNote] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const router = useRouter();
 
   const handleSave = async (e: React.FormEvent) => {
@@ -99,6 +105,54 @@ export default function SettingsClient({ user }: { user: User }) {
       alert('Došlo k chybě při připojování k firmě.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const openDeleteRequestModal = () => {
+    if (
+      !window.confirm(
+        'Opravdu chcete podat žádost o trvalé smazání účtu? Žádost bude odeslána ke schválení správcem.'
+      )
+    ) {
+      return;
+    }
+    setDeleteError(null);
+    setDeletePassword('');
+    setDeleteNote('');
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deletePassword.trim()) {
+      setDeleteError('Zadejte heslo.');
+      return;
+    }
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/api/user/account-deletion-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: deletePassword,
+          note: deleteNote.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setShowDeleteModal(false);
+        setDeletePassword('');
+        setDeleteNote('');
+        alert(data.message || 'Žádost byla odeslána ke schválení.');
+        router.refresh();
+      } else {
+        setDeleteError(data.message || 'Žádost se nepodařilo odeslat.');
+      }
+    } catch {
+      setDeleteError('Došlo k chybě při odesílání žádosti.');
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -353,6 +407,28 @@ export default function SettingsClient({ user }: { user: User }) {
                       </div>
                     </label>
                   </div>
+
+                  <div className="pt-4 border-t border-red-500/20">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                      <UserX className="w-4 h-4 text-red-400" />
+                      Smazání účtu
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Požádáte o trvalé smazání účtu. Z bezpečnostních důvodů zadáte heslo; žádost projde schválením v
+                      administraci. Podrobnosti a alternativní postup najdete na{' '}
+                      <Link href="/smazatucet" className="text-brand-yellow hover:underline" target="_blank" rel="noopener noreferrer">
+                        stránce smazání účtu
+                      </Link>
+                      .
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openDeleteRequestModal}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-colors"
+                    >
+                      Požádat o smazání účtu
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -470,6 +546,78 @@ export default function SettingsClient({ user }: { user: User }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-account-title"
+        >
+          <div className="relative w-full max-w-md rounded-xl border border-white/10 bg-[#1A1A1A] p-6 shadow-xl">
+            <button
+              type="button"
+              onClick={() => !deleteSubmitting && setShowDeleteModal(false)}
+              className="absolute right-4 top-4 rounded-lg p-1 text-gray-500 hover:bg-white/10 hover:text-white"
+              aria-label="Zavřít"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 id="delete-account-title" className="text-lg font-semibold text-white pr-8">
+              Potvrzení žádosti o smazání účtu
+            </h3>
+            <p className="mt-2 text-sm text-gray-400">
+              Pro ověření identity zadejte heslo k účtu. Žádost bude odeslána ke schválení.
+            </p>
+            <form onSubmit={handleDeleteRequestSubmit} className="mt-6 space-y-4">
+              {deleteError && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                  {deleteError}
+                </div>
+              )}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-400">Heslo</label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  autoComplete="current-password"
+                  className="w-full rounded-lg border border-white/10 bg-[#111] px-3 py-2.5 text-white focus:border-brand-yellow outline-none"
+                  disabled={deleteSubmitting}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-400">Poznámka (volitelné)</label>
+                <textarea
+                  value={deleteNote}
+                  onChange={(e) => setDeleteNote(e.target.value)}
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-white/10 bg-[#111] px-3 py-2.5 text-white focus:border-brand-yellow outline-none"
+                  disabled={deleteSubmitting}
+                  placeholder="Např. důvod žádosti…"
+                />
+              </div>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={deleteSubmitting}
+                  onClick={() => setShowDeleteModal(false)}
+                  className="rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteSubmitting}
+                  className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                >
+                  {deleteSubmitting ? 'Odesílám…' : 'Odeslat žádost'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

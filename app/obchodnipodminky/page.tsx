@@ -50,40 +50,34 @@ export default function ObchodniPodminkyPage() {
         <p className="mb-10 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400">
           Tento dokument slouží jako přehled pravidel používání služby <strong className="text-gray-300">Revizone</strong>{' '}
           (webová aplikace a související mobilní klient / PWA) a jako informace o zpracování osobních údajů ve smyslu nařízení
-          Evropského parlamentu a Rady (EU) 2016/679 (GDPR). Text nenahrazuje individuální právní poradenství. Provozovatel je
-          povinen doplnit identifikační údaje v záhlaví níže.
+          Evropského parlamentu a Rady (EU) 2016/679 (GDPR). Text nenahrazuje individuální právní poradenství.
         </p>
 
         <div className="mb-10 rounded-xl border border-brand-yellow/20 bg-brand-yellow/5 p-4 sm:p-5">
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
             <Shield className="h-5 w-5 text-brand-yellow" />
-            Identifikace provozovatele (doplňte)
+            Identifikace vydavatele a poskytovatele služeb
           </h2>
-          <ul className="list-inside list-disc space-y-1 text-sm text-gray-300">
+          <ul className="list-inside list-disc space-y-2 text-sm text-gray-300">
             <li>
-              <strong className="text-white">Obchodní firma / název:</strong> …
+              <strong className="text-white">Vydavatel aplikace</strong> (název / vývojář uvedený v záznamu aplikace Revizone v
+              obchodě Google Play): <strong className="text-white">Ludvík Remešek</strong>
             </li>
             <li>
-              <strong className="text-white">Sídlo:</strong> …
-            </li>
-            <li>
-              <strong className="text-white">IČO:</strong> … &nbsp;|&nbsp; <strong className="text-white">DIČ:</strong> …
+              <strong className="text-white">Poskytovatel služeb</strong> (provozní část Služby):{' '}
+              <strong className="text-white">ASPERSUN, s.r.o.</strong>
             </li>
             <li>
               <strong className="text-white">Kontaktní e-mail:</strong>{' '}
               <a href="mailto:info@revizone.cz" className="text-brand-yellow hover:underline">
                 info@revizone.cz
-              </a>{' '}
-              (nahraďte skutečným kontaktem)
-            </li>
-            <li>
-              <strong className="text-white">Zapsaná:</strong> … (rejstřík / spisová značka, pokud přichází v úvahu)
+              </a>
             </li>
           </ul>
           <p className="mt-3 text-xs text-gray-500">
-            Pro účely GDPR je provozovatel vůči uživatelům v postavení <strong>správce osobních údajů</strong>, pokud sám
-            určuje účely a prostředky zpracování. V některých vztazích (např. zpracování na pokyn uživatele u třetích stran)
-            může být role vymezena jinak — viz níže.
+            Pro účely GDPR může být vůči uživatelům v postavení <strong>správce osobních údajů</strong> zejména poskytovatel
+            služeb, případně vydavatel — podle toho, kdo určuje účely a prostředky zpracování u konkrétního zpracování. V
+            některých vztazích může být role vymezena jinak — viz níže.
           </p>
         </div>
 
@@ -125,14 +119,26 @@ export default function ObchodniPodminkyPage() {
             </p>
             <p>
               Účet může být po porušení Podmínky, zákona nebo oprávněného zájmu provozovatele <strong>omezen nebo
-              ukončen</strong>. Uživatel může o zrušení účtu požádat prostřednictvím kontaktu uvedeného výše nebo funkce v
-              nastavení účtu, pokud je dostupná.
+              ukončen</strong>. Uživatel může o zrušení účtu požádat prostřednictvím kontaktu uvedeného výše, funkce v
+              nastavení účtu (Nastavení → Osobní údaje → smazání účtu) nebo na stránce{' '}
+              <Link href="/smazatucet" className="text-brand-yellow hover:underline">
+                /smazatucet
+              </Link>
+              .
             </p>
             <p>
               <strong>Mazání účtu (Google Play):</strong> Uživatel může požádat o smazání účtu a souvisejících osobních údajů
               v rozsahu stanoveném zákonem a provozními důvody (např. dokončené objednávky mohou být uchovány po dobu
-              vyžadovanou zákonem nebo oprávněným zájmem). Žádost lze podat e-mailem na kontaktní adresu provozovatele. O
-              vyřízení budete informováni v přiměřené lhůtě.
+              vyžadovanou zákonem nebo oprávněným zájmem). Žádost lze podat v aplikaci (po ověření hesla), na stránce{' '}
+              <Link href="/smazatucet" className="text-brand-yellow hover:underline">
+                Smazání účtu
+              </Link>{' '}
+              nebo e-mailem na kontaktní adresu. Žádost podléhá schválení v administraci. O vyřízení budete informováni v
+              přiměřené lhůtě. Podrobný popis postupu a uchovávání dat je na stránce{' '}
+              <Link href="/smazatucet" className="text-brand-yellow hover:underline">
+                /smazatucet
+              </Link>
+              .
             </p>
           </Section>
 
