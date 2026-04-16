@@ -7,12 +7,21 @@ const REMINDER_DAYS = [30, 14, 7, 2, 1];
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: Request) {
-  if (CRON_SECRET) {
-    const { searchParams } = new URL(req.url);
-    const secret = searchParams.get('secret');
-    if (secret !== CRON_SECRET) {
+  const { searchParams } = new URL(req.url);
+  const provided = searchParams.get('secret');
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!CRON_SECRET) {
+      return NextResponse.json(
+        { message: 'Cron disabled: set CRON_SECRET in the server environment.' },
+        { status: 503 }
+      );
+    }
+    if (provided !== CRON_SECRET) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+  } else if (CRON_SECRET && provided !== CRON_SECRET) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {

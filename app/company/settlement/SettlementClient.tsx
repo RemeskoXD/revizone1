@@ -76,8 +76,8 @@ export default function SettlementClient({ monthlyData, technicians }: any) {
                 {month.perTechnician.length === 0 ? (
                   <p className="text-gray-500 text-sm text-center py-4">Žádné dokončené zakázky v tomto měsíci.</p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                  <div className="table-scroll -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <table className="w-full min-w-[520px] text-left text-sm">
                       <thead className="text-gray-500 border-b border-white/5 text-xs">
                         <tr>
                           <th className="pb-3 font-medium">Technik</th>

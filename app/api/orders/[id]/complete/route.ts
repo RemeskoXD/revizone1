@@ -4,6 +4,11 @@ import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notifyOrderCompleted, notifyDefectCreated, sendOrderStatusEmail } from '@/lib/notifications';
+import { readJsonBody, PayloadTooLargeError } from '@/lib/json-body';
+import { rateLimit } from '@/lib/rate-limit';
+
+const REPORT_BODY_MAX = 8_500_000;
+const RESULTS = new Set(['PASS', 'FAIL', 'PASS_WITH_NOTES']);
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,11 +17,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
-    const { reportFile, revisionResult, revisionNotes, nextRevisionDate } = await req.json();
+    const rl = rateLimit(`order-complete:${session.user.id}`, 35, 60 * 60 * 1000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { message: 'Příliš mnoho dokončení. Zkuste to později.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } }
+      );
+    }
 
-    const order = await prisma.order.findUnique({
-      where: { readableId: id },
+    const { id } = await params;
+    const body = await readJsonBody<{
+      reportFile?: string;
+      revisionResult?: string;
+      revisionNotes?: string | null;
+      nextRevisionDate?: string | null;
+    }>(req, REPORT_BODY_MAX);
+
+    let { reportFile, revisionResult, revisionNotes, nextRevisionDate } = body;
+    revisionResult = revisionResult && RESULTS.has(revisionResult) ? revisionResult : 'PASS';
+    revisionNotes = revisionNotes != null ? String(revisionNotes).slice(0, 8000) : null;
+
+    const order = await prisma.order.findFirst({
+      where: { OR: [{ id }, { readableId: id }] },
       include: { revisionCategory: true },
     });
 
@@ -32,7 +54,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ message: 'Zakázka je již dokončena' }, { status: 400 });
     }
 
-    if (!reportFile) {
+    if (!reportFile || typeof reportFile !== 'string') {
       return NextResponse.json({ message: 'Revizní zpráva (PDF) je povinná' }, { status: 400 });
     }
 
@@ -83,6 +105,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json({ message: 'Revizní zpráva / data jsou příliš velká' }, { status: 413 });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: 'Neplatný formát dat' }, { status: 400 });
+    }
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2000'

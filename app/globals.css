@@ -17,6 +17,13 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* Horizontální scroll datových tabulek na telefonech / tabletech */
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 @theme {
   --color-brand-dark: var(--color-bg-dark);
   --color-brand-card: var(--color-bg-card);

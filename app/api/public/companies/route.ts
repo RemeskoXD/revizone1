@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const ip = getClientIp(req);
+  const limited = rateLimit(`companies-list:${ip}`, 60, 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { message: "Příliš mnoho požadavků" },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+    );
+  }
+
   try {
     const companies = await prisma.user.findMany({
       where: {
@@ -10,7 +20,6 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        email: true
       },
       orderBy: {
         name: "asc"

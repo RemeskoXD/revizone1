@@ -5,6 +5,10 @@ import fs from 'fs';
 import path from 'path';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

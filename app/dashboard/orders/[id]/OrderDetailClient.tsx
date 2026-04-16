@@ -55,15 +55,16 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
   };
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="flex min-h-0 flex-col space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <Link href="/dashboard/orders" className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">Objednávka #{order.readableId}</h1>
+      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="flex items-start gap-3 sm:items-center">
+          <Link href="/dashboard/orders" className="shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-xl font-bold text-white sm:text-2xl">Objednávka #{order.readableId}</h1>
             <span className={cn(
                 "px-2.5 py-0.5 rounded-full text-xs font-medium border",
                 order.status === 'COMPLETED' ? "bg-green-500/10 text-green-500 border-green-500/20" : 
@@ -78,9 +79,10 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
                order.status === 'CANCELLED' ? 'Zrušeno' : 'Čeká'}
             </span>
           </div>
-          <p className="text-gray-400 text-sm">Vytvořeno {new Date(order.createdAt).toLocaleDateString('cs-CZ')}</p>
+          <p className="text-sm text-gray-400">Vytvořeno {new Date(order.createdAt).toLocaleDateString('cs-CZ')}</p>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-4">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:justify-end">
             {['ADMIN', 'SUPPORT', 'CONTRACTOR'].includes(currentUser.role) && (
               <select
                 value={order.status}
@@ -333,22 +335,22 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
             <h3 className="text-lg font-semibold text-white mb-4">Dokumenty</h3>
             {/* @ts-ignore */}
             {order.reportFile ? (
-              <div className="flex items-center justify-between p-4 bg-[#111] border border-white/10 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-brand-yellow/10 text-brand-yellow rounded-lg">
-                    <FileText className="w-6 h-6" />
+              <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-[#111] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="shrink-0 rounded-lg bg-brand-yellow/10 p-2 text-brand-yellow">
+                    <FileText className="h-6 w-6" />
                   </div>
-                  <div>
-                    <p className="text-white font-medium">Revizní zpráva</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-white">Revizní zpráva</p>
                     <p className="text-xs text-gray-500">PDF Dokument</p>
                   </div>
                 </div>
                 <a 
                   href={`/api/orders/${order.readableId}/download`} 
                   download 
-                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 sm:self-center"
                 >
-                  <Download className="w-4 h-4" /> Stáhnout
+                  <Download className="h-4 w-4" /> Stáhnout
                 </a>
               </div>
             ) : (
@@ -360,8 +362,10 @@ export default function OrderDetailClient({ order, currentUser, technicians = []
         </div>
 
         {/* Right Column: Chat + Review */}
-        <div className="w-full lg:w-1/3 flex flex-col gap-6 h-[600px] lg:h-auto">
+        <div className="flex w-full flex-col gap-6 lg:w-1/3 lg:min-h-0">
+            <div className="flex h-[min(420px,65dvh)] max-h-[640px] min-h-[280px] flex-col lg:h-[480px]">
             <ChatSection orderId={order.id} currentUserId={currentUser.id} />
+            </div>
             <PhotoSection orderId={order.id} isTechnician={false} />
             <ReviewSection 
               orderReadableId={order.readableId} 

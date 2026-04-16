@@ -1,5 +1,8 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 type CheckResult = {
   name: string;
@@ -8,21 +11,67 @@ type CheckResult = {
   details?: string;
 };
 
-export async function GET() {
-  const results: CheckResult[] = [];
-  let dbConnected = false;
+function healthDetailToken(): string | undefined {
+  return process.env.HEALTH_CHECK_SECRET || process.env.CRON_SECRET || undefined;
+}
 
-  // 1. Database connection
+function canSeeDetailedHealth(req: Request): boolean {
+  const expected = healthDetailToken();
+  if (!expected) {
+    return process.env.NODE_ENV !== 'production';
+  }
+  const url = new URL(req.url);
+  const q = url.searchParams.get('secret');
+  const auth = req.headers.get('authorization');
+  const bearer = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const candidate = bearer || q || '';
+  if (candidate.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(candidate, 'utf8'), Buffer.from(expected, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
+export async function GET(req: Request) {
+  const detailed = canSeeDetailedHealth(req);
+
+  if (!detailed) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return NextResponse.json({
+        mode: 'minimal',
+        status: 'ok',
+        database: 'connected',
+        hint:
+          process.env.NODE_ENV === 'production'
+            ? 'Pro úplnou diagnostiku nastavte HEALTH_CHECK_SECRET nebo CRON_SECRET a pošlete Authorization: Bearer <token>.'
+            : 'Vývoj: celá diagnostika je dostupná bez tokenu, pokud není nastaven HEALTH_CHECK_SECRET ani CRON_SECRET.',
+      });
+    } catch {
+      return NextResponse.json(
+        { mode: 'minimal', status: 'error', database: 'disconnected', message: 'Databáze není dostupná' },
+        { status: 503 }
+      );
+    }
+  }
+
+  const results: CheckResult[] = [];
+  const isProd = process.env.NODE_ENV === 'production';
+
   try {
     await prisma.$queryRaw`SELECT 1`;
     results.push({ name: 'Připojení k databázi', status: 'ok', message: 'Databáze je dostupná' });
-    dbConnected = true;
-  } catch (e: any) {
-    results.push({ name: 'Připojení k databázi', status: 'error', message: 'Nelze se připojit k databázi', details: e.message });
-    return NextResponse.json({ results, summary: { ok: 0, error: 1, missing: 0 } });
+  } catch (e: unknown) {
+    results.push({
+      name: 'Připojení k databázi',
+      status: 'error',
+      message: 'Nelze se připojit k databázi',
+      details: isProd ? undefined : e instanceof Error ? e.message : String(e),
+    });
+    return NextResponse.json({ mode: 'detailed', results, summary: { ok: 0, error: 1, missing: 0 } }, { status: 503 });
   }
 
-  // 2. Check each table exists and has correct columns
   const tableChecks: { table: string; requiredColumns: string[] }[] = [
     {
       table: 'User',
@@ -96,7 +145,7 @@ export async function GET() {
 
   for (const check of tableChecks) {
     try {
-      const columns: any[] = await prisma.$queryRawUnsafe(
+      const columns: unknown[] = await prisma.$queryRawUnsafe(
         `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${check.table}'`
       );
 
@@ -110,8 +159,10 @@ export async function GET() {
         continue;
       }
 
-      const existingColumns = columns.map((c: any) => c.COLUMN_NAME || c.column_name);
-      const missingColumns = check.requiredColumns.filter(col => !existingColumns.includes(col));
+      const existingColumns = (columns as { COLUMN_NAME?: string; column_name?: string }[]).map(
+        (c) => c.COLUMN_NAME || c.column_name
+      );
+      const missingColumns = check.requiredColumns.filter((col) => !existingColumns.includes(col));
 
       if (missingColumns.length > 0) {
         results.push({
@@ -121,7 +172,9 @@ export async function GET() {
           details: `Chybějící: ${missingColumns.join(', ')}`,
         });
       } else {
-        const rowCount: any = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as cnt FROM \`${check.table}\``);
+        const rowCount: { cnt?: number | bigint }[] = await prisma.$queryRawUnsafe(
+          `SELECT COUNT(*) as cnt FROM \`${check.table}\``
+        );
         const count = Number(rowCount[0]?.cnt ?? 0);
         results.push({
           name: `Tabulka: ${check.table}`,
@@ -129,19 +182,18 @@ export async function GET() {
           message: `OK – ${existingColumns.length} sloupců, ${count} záznamů`,
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       results.push({
         name: `Tabulka: ${check.table}`,
         status: 'error',
         message: `Chyba při kontrole`,
-        details: e.message?.slice(0, 200),
+        details: isProd ? undefined : e instanceof Error ? e.message?.slice(0, 200) : String(e).slice(0, 200),
       });
     }
   }
 
-  // 3. Check foreign keys
   try {
-    const fks: any[] = await prisma.$queryRaw`
+    const fks: unknown[] = await prisma.$queryRaw`
       SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
       FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
       WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL
@@ -152,30 +204,33 @@ export async function GET() {
       status: 'ok',
       message: `Nalezeno ${fks.length} cizích klíčů`,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     results.push({
       name: 'Cizí klíče (Foreign Keys)',
       status: 'error',
       message: 'Chyba při kontrole cizích klíčů',
-      details: e.message?.slice(0, 200),
+      details: isProd ? undefined : e instanceof Error ? e.message?.slice(0, 200) : undefined,
     });
   }
 
-  // 4. Check indexes on Order
   try {
-    const indexes: any[] = await prisma.$queryRawUnsafe(
+    const indexes: unknown[] = await prisma.$queryRawUnsafe(
       `SHOW INDEX FROM \`Order\` WHERE Column_name = 'cancelToken' AND Non_unique = 0`
     );
     if (indexes.length > 0) {
       results.push({ name: 'Index: Order.cancelToken (UNIQUE)', status: 'ok', message: 'Unikátní index existuje' });
     } else {
-      results.push({ name: 'Index: Order.cancelToken (UNIQUE)', status: 'missing', message: 'Chybí unikátní index na cancelToken', details: "ALTER TABLE `Order` ADD UNIQUE INDEX `Order_cancelToken_key`(`cancelToken`);" });
+      results.push({
+        name: 'Index: Order.cancelToken (UNIQUE)',
+        status: 'missing',
+        message: 'Chybí unikátní index na cancelToken',
+        details: 'ALTER TABLE `Order` ADD UNIQUE INDEX `Order_cancelToken_key`(`cancelToken`);',
+      });
     }
   } catch {
     results.push({ name: 'Index: Order.cancelToken', status: 'error', message: 'Nelze ověřit' });
   }
 
-  // 5. Env variables check
   const envChecks = [
     { key: 'DATABASE_URL', required: true },
     { key: 'NEXTAUTH_SECRET', required: true },
@@ -201,10 +256,10 @@ export async function GET() {
   }
 
   const summary = {
-    ok: results.filter(r => r.status === 'ok').length,
-    error: results.filter(r => r.status === 'error').length,
-    missing: results.filter(r => r.status === 'missing').length,
+    ok: results.filter((r) => r.status === 'ok').length,
+    error: results.filter((r) => r.status === 'error').length,
+    missing: results.filter((r) => r.status === 'missing').length,
   };
 
-  return NextResponse.json({ results, summary });
+  return NextResponse.json({ mode: 'detailed', results, summary });
 }

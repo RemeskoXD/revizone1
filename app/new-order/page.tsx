@@ -55,21 +55,21 @@ export default function NewOrderPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
+    <div className="flex min-h-dvh overflow-hidden bg-[#0a0a0a] text-white">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="mb-8 flex items-center gap-4">
+        <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 md:p-8">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-6 flex items-start gap-3 sm:mb-8 sm:items-center sm:gap-4">
               <Link href="/dashboard" className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                 <ArrowLeft className="w-5 h-5 text-gray-400" />
               </Link>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Nová objednávka revize</h1>
-                <p className="text-gray-400 text-sm mt-1">Vyplňte formulář pro objednání nové revize</p>
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Nová objednávka revize</h1>
+                <p className="mt-1 text-sm text-gray-400">Vyplňte formulář pro objednání nové revize</p>
               </div>
             </div>
 
@@ -82,7 +82,7 @@ export default function NewOrderPage() {
                 <p className="text-gray-400">Budete přesměrováni zpět na nástěnku...</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="bg-[#111111] border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+              <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-white/5 bg-[#111111] p-4 shadow-xl sm:p-6 md:p-8">
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-4 rounded-xl">
                     {error}
@@ -146,17 +146,17 @@ export default function NewOrderPage() {
                   ></textarea>
                 </div>
 
-                <div className="pt-4 flex justify-end gap-4">
+                <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end sm:gap-4">
                   <Link
                     href="/dashboard"
-                    className="px-6 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                    className="rounded-xl px-6 py-3 text-center font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
                   >
                     Zrušit
                   </Link>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-brand-yellow hover:bg-brand-yellow-hover text-black font-bold py-3 px-8 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-brand-yellow px-8 py-3 font-bold text-black transition-all hover:bg-brand-yellow-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Odeslat objednávku"}
                   </button>

@@ -54,14 +54,14 @@ export default function TechnicianQueueClient({ jobs, technicianId }: { jobs: an
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Moje zakázky</h1>
-        <p className="text-gray-400 text-sm">Správa přidělených revizí a nových poptávek.</p>
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-white sm:text-2xl">Moje zakázky</h1>
+        <p className="text-sm text-gray-400">Správa přidělených revizí a nových poptávek.</p>
       </div>
 
       {/* Tabs + Search */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex gap-1 bg-[#1A1A1A] border border-white/5 rounded-lg p-1 overflow-x-auto">
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="table-scroll flex max-w-full flex-nowrap gap-1 rounded-lg border border-white/5 bg-[#1A1A1A] p-1 lg:min-w-0 lg:flex-1">
           {STATUS_TABS.map((t) => (
             <button key={t.value} onClick={() => setTab(t.value)} className={cn(
               "px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap",

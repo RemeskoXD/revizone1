@@ -21,34 +21,40 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const userRole = ROLE_LABELS[session?.user?.role || ''] || 'Administrátor';
 
   return (
-    <header className="h-16 border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-6 sticky top-0 z-10">
-      <div className="flex items-center gap-4 flex-1">
-        <button
-          onClick={onMenuClick}
-          className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-        <span className="md:hidden font-bold text-white tracking-tight mr-2">REVIZONE APLIKACE</span>
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
-            <ShieldAlert className="w-3 h-3 text-red-500" />
+    <header className="sticky top-0 z-10 shrink-0 border-b border-white/10 bg-[#0a0a0a] pt-[env(safe-area-inset-top)]">
+      <div className="flex min-h-14 flex-col gap-2 px-3 py-2.5 sm:px-4 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-0">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="touch-manipulation rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white lg:hidden"
+            aria-label="Otevřít menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <span className="truncate text-sm font-bold tracking-tight text-white sm:text-base lg:hidden">
+            Revizone
+          </span>
+          <div className="hidden items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 lg:flex">
+            <ShieldAlert className="h-3 w-3 shrink-0 text-red-500" />
             <span className="text-xs font-medium text-red-500">ADMINISTRÁTORSKÝ PŘÍSTUP</span>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <NotificationBell />
-        
-        <div className="h-8 w-[1px] bg-white/10 mx-1"></div>
+        <div className="flex items-center justify-end gap-2 sm:gap-4 lg:ml-auto">
+          <NotificationBell />
 
-        <div className="flex items-center gap-3 pl-2">
-            <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">{userName}</p>
-                <p className="text-xs text-gray-500">{userRole}</p>
+          <div className="mx-0.5 hidden h-8 w-px bg-white/10 sm:block" />
+
+          <div className="flex min-w-0 items-center gap-2 pl-1 sm:gap-3 sm:pl-2">
+            <div className="hidden min-w-0 text-right sm:block">
+              <p className="truncate text-sm font-medium text-white">{userName}</p>
+              <p className="truncate text-xs text-gray-500">{userRole}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-red-900/20 flex items-center justify-center border border-red-500/20">
-                <User className="w-5 h-5 text-red-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-500/20 bg-red-900/20">
+              <User className="h-5 w-5 text-red-500" />
             </div>
+          </div>
         </div>
       </div>
     </header>

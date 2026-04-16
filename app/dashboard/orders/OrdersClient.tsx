@@ -27,19 +27,19 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Moje objednávky</h1>
-          <p className="text-gray-400">Přehled všech vašich revizí a jejich stavu.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Moje objednávky</h1>
+          <p className="text-sm text-gray-400 sm:text-base">Přehled všech vašich revizí a jejich stavu.</p>
         </div>
-        <div className="flex gap-3">
-            <Link href="/dashboard/new-order" className="px-4 py-2 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors">
+        <div className="flex shrink-0 gap-3">
+            <Link href="/dashboard/new-order" className="rounded-lg bg-brand-yellow px-4 py-2 text-center text-sm font-semibold text-black transition-colors hover:bg-brand-yellow-hover">
                 Nová objednávka
             </Link>
         </div>
       </div>
 
-      <div className="bg-[#1A1A1A] p-4 rounded-xl border border-white/5 flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col gap-4 rounded-xl border border-white/5 bg-[#1A1A1A] p-3 sm:flex-row sm:p-4">
         <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input 
@@ -65,24 +65,24 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
       </div>
 
       {/* Orders List */}
-      <div className="bg-[#1A1A1A] border border-white/5 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-                <thead className="bg-white/5 text-gray-400 uppercase text-xs font-semibold">
+      <div className="overflow-hidden rounded-xl border border-white/5 bg-[#1A1A1A]">
+        <div className="table-scroll -mx-3 px-3 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="bg-white/5 text-xs font-semibold uppercase text-gray-400">
                     <tr>
-                        <th className="px-6 py-4">ID</th>
-                        <th className="px-6 py-4">Služba</th>
-                        <th className="px-6 py-4">Adresa</th>
-                        <th className="px-6 py-4">Datum</th>
-                        <th className="px-6 py-4">Cena</th>
-                        <th className="px-6 py-4">Stav</th>
-                        <th className="px-6 py-4 text-right">Akce</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">ID</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">Služba</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">Adresa</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">Datum</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">Cena</th>
+                        <th className="px-3 py-3 sm:px-5 sm:py-4">Stav</th>
+                        <th className="px-3 py-3 text-right sm:px-5 sm:py-4">Akce</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                     {filteredOrders.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={7} className="px-3 py-8 text-center text-gray-500 sm:px-6">
                           {searchQuery || statusFilter !== 'all' ? 'Žádné objednávky neodpovídají filtru.' : 'Zatím nemáte žádné objednávky.'}
                         </td>
                       </tr>
@@ -96,12 +96,12 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                           className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
                           onClick={() => window.location.href = `/dashboard/orders/${order.readableId}`}
                         >
-                            <td className="px-6 py-4 font-mono text-gray-500">
+                            <td className="px-3 py-3 font-mono text-gray-500 sm:px-5 sm:py-4">
                                 <Link href={`/dashboard/orders/${order.readableId}`} className="hover:text-brand-yellow transition-colors">
                                     #{order.readableId}
                                 </Link>
                             </td>
-                            <td className="px-6 py-4 font-medium text-white">
+                            <td className="px-3 py-3 font-medium text-white sm:px-5 sm:py-4">
                                 <div className="flex items-center gap-2">
                                     <div className="p-1.5 rounded bg-white/5 text-gray-400 group-hover:text-brand-yellow transition-colors">
                                         <FileText className="w-4 h-4" />
@@ -109,10 +109,10 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                                     {order.serviceType}
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-400">{order.address}</td>
-                            <td className="px-6 py-4 text-gray-400">{new Date(order.createdAt).toLocaleDateString('cs-CZ')}</td>
-                            <td className="px-6 py-4 text-brand-yellow">{order.price ? `${order.price.toLocaleString('cs-CZ')} Kč` : '-'}</td>
-                            <td className="px-6 py-4">
+                            <td className="max-w-[12rem] px-3 py-3 text-gray-400 sm:px-5 sm:py-4"><span className="line-clamp-2">{order.address}</span></td>
+                            <td className="whitespace-nowrap px-3 py-3 text-gray-400 sm:px-5 sm:py-4">{new Date(order.createdAt).toLocaleDateString('cs-CZ')}</td>
+                            <td className="whitespace-nowrap px-3 py-3 text-brand-yellow sm:px-5 sm:py-4">{order.price ? `${order.price.toLocaleString('cs-CZ')} Kč` : '-'}</td>
+                            <td className="px-3 py-3 sm:px-5 sm:py-4">
                                 <span className={cn(
                                     "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
                                     order.status === 'COMPLETED' ? "bg-green-500/10 text-green-500" : 
@@ -128,7 +128,7 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
                                      'Čeká'}
                                 </span>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-3 py-3 text-right sm:px-5 sm:py-4">
                                 <div className="flex items-center justify-end gap-2">
                                     <Link href={`/dashboard/orders/${order.readableId}`} className="p-2 text-gray-400 hover:text-brand-yellow transition-colors rounded-lg hover:bg-white/5">
                                         <FileText className="w-4 h-4" />

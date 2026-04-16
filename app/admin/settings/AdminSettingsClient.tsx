@@ -81,7 +81,7 @@ export default function AdminSettingsClient({ user, teamMembers, systemConfig = 
       });
       if (res.ok) {
         const data = await res.json();
-        const link = `${window.location.origin}/register?invite=${data.inviteCode}`;
+        const link = `${window.location.origin}/registertest?invite=${data.inviteCode}`;
         setInviteLink(link);
       } else {
         alert('Nepodařilo se vygenerovat odkaz.');

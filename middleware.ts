@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { getNextAuthJwtSecret, isProductionAuthMisconfigured } from '@/lib/jwt-secret';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
+
+/** POST z NextAuth při přihlášení heslem (Credentials provider). */
+function isCredentialsSignInPost(request: NextRequest): boolean {
+  if (request.method !== 'POST') return false;
+  const p = request.nextUrl.pathname;
+  return (
+    p === '/api/auth/callback/credentials' ||
+    p.startsWith('/api/auth/callback/credentials/') ||
+    p === '/api/auth/signin/credentials' ||
+    p.startsWith('/api/auth/signin/credentials/')
+  );
+}
 
 const PROTECTED_ROUTES: Record<string, string[]> = {
   '/admin': ['ADMIN', 'SUPPORT', 'CONTRACTOR'],
@@ -11,20 +25,45 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
   '/dashboard': ['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN', 'REALTY', 'SVJ', 'ADMIN', 'SUPPORT', 'CONTRACTOR'],
 };
 
-const PUBLIC_ROUTES = ['/login', '/register', '/success', '/new-order', '/claim-property', '/share', '/test', '/api/public', '/api/auth', '/api/banner', '/api/revisions', '/api/health'];
+const PUBLIC_ROUTES = ['/login', '/register', '/registertest', '/success', '/new-order', '/claim-property', '/share', '/test', '/obchodnipodminky', '/api/public', '/api/auth', '/api/banner', '/api/revisions', '/api/health'];
+
+/** Only real static assets — never use `pathname.includes('.')` (that bypassed auth for arbitrary URLs). */
+const STATIC_FILE = /\.(?:ico|png|jpg|jpeg|gif|webp|avif|svg|css|js|map|txt|xml|woff2?|ttf|eot|webmanifest)$/i;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Always allow framework assets (needed even when returning 503 for misconfiguration).
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || STATIC_FILE.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isProductionAuthMisconfigured()) {
+    return new NextResponse(
+      'Server configuration error: NEXTAUTH_SECRET must be set in production (min. 24 znaků, lépe 32+ náhodných).',
+      { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+    );
+  }
+
+  if (isCredentialsSignInPost(request)) {
+    const ip = getClientIp(request);
+    const limited = rateLimit(`auth-cred:${ip}`, 25, 15 * 60 * 1000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: 'Příliš mnoho pokusů o přihlášení. Zkuste to později.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limited.retryAfterSec) },
+        }
+      );
+    }
+  }
 
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route)) || pathname === '/') {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.includes('.')) {
-    return NextResponse.next();
-  }
-
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || 'super-secret-key-for-dev' });
+  const token = await getToken({ req: request, secret: getNextAuthJwtSecret() });
 
   if (!token) {
     const loginUrl = new URL('/login', request.url);

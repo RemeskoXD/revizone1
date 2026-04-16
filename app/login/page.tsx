@@ -44,14 +44,14 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#111111] relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-yellow/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-[#111111] px-3 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-10">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[min(800px,140vw)] w-[min(800px,140vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-yellow/5 blur-3xl" />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 w-full max-w-md bg-[#1A1A1A] border border-white/10 rounded-2xl p-8 shadow-2xl"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-[#1A1A1A] p-5 shadow-2xl sm:p-8"
       >
         <div className="flex justify-center mb-6">
           <div className="relative flex items-center justify-center w-12 h-12 bg-brand-yellow rounded-xl shadow-lg shadow-brand-yellow/20">
@@ -109,11 +109,18 @@ function LoginForm() {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Nemáte účet?{" "}
-          <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-white hover:text-brand-yellow transition-colors">
-            Zaregistrovat se
-          </Link>
+        <div className="mt-6 space-y-3 text-center text-sm text-gray-500">
+          <div>
+            Nemáte účet?{" "}
+            <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-white hover:text-brand-yellow transition-colors">
+              Zaregistrovat se
+            </Link>
+          </div>
+          <div className="text-xs text-gray-600">
+            <Link href="/obchodnipodminky" className="hover:text-gray-400">
+              Obchodní podmínky a ochrana osobních údajů
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -122,7 +129,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#111111]"><Loader2 className="w-8 h-8 animate-spin text-brand-yellow" /></div>}>
+    <Suspense fallback={<div className="flex min-h-dvh items-center justify-center bg-[#111111]"><Loader2 className="h-8 w-8 animate-spin text-brand-yellow" /></div>}>
       <LoginForm />
     </Suspense>
   );

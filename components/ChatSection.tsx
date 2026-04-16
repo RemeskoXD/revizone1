@@ -82,7 +82,7 @@ export function ChatSection({ orderId, currentUserId }: { orderId: string, curre
   }
 
   return (
-    <div className="flex flex-col h-full min-h-[400px] bg-[#1A1A1A] border border-white/5 rounded-xl overflow-hidden">
+    <div className="flex h-full min-h-[240px] flex-col overflow-hidden rounded-xl border border-white/5 bg-[#1A1A1A] sm:min-h-[320px]">
       <div className="p-4 border-b border-white/5 bg-[#111]">
         <h3 className="text-sm font-semibold text-white">Komunikace k zakázce</h3>
       </div>

@@ -13,14 +13,15 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
   if (!session || session.user.role !== 'COMPANY_ADMIN') redirect('/login');
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="flex min-h-dvh bg-black text-white">
       <MobileSidebarToggle>
         <div className="p-6">
-          <Link href="/company" className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-lg">R</span>
+          <Link href="/company" className="flex flex-wrap items-center gap-2 text-lg font-bold tracking-tight text-white sm:text-xl">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-yellow">
+              <span className="text-lg font-black text-black">R</span>
             </div>
-            Revizone <span className="text-xs text-brand-yellow font-normal px-2 py-0.5 bg-brand-yellow/10 rounded-full">Firma</span>
+            <span className="min-w-0">Revizone</span>
+            <span className="text-xs font-normal text-brand-yellow px-2 py-0.5 bg-brand-yellow/10 rounded-full">Firma</span>
           </Link>
         </div>
 
@@ -60,8 +61,8 @@ export default async function CompanyLayout({ children }: { children: ReactNode 
         </div>
       </MobileSidebarToggle>
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pt-14 pb-[env(safe-area-inset-bottom)] lg:pt-0">
+        <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:p-8">
           <div className="max-w-7xl mx-auto">
             <PageTransition>
               {children}

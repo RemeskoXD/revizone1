@@ -62,24 +62,24 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
   };
 
   return (
-    <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+    <div className="overflow-hidden rounded-xl border border-white/5 bg-[#111]">
+      <div className="table-scroll -mx-3 px-3 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-white/5 text-gray-400 uppercase text-xs font-semibold">
                   <tr>
-                      <th className="px-6 py-4">ID</th>
-                      <th className="px-6 py-4">Služba & Lokalita</th>
-                      <th className="px-6 py-4">Zákazník</th>
-                      <th className="px-6 py-4">Cena</th>
-                      <th className="px-6 py-4">Přiřazený technik</th>
-                      <th className="px-6 py-4">Stav</th>
-                      <th className="px-6 py-4 text-right">Akce</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">ID</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">Služba & Lokalita</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">Zákazník</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">Cena</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">Přiřazený technik</th>
+                      <th className="px-3 py-3 sm:px-5 sm:py-4">Stav</th>
+                      <th className="px-3 py-3 text-right sm:px-5 sm:py-4">Akce</th>
                   </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                      <td colSpan={7} className="px-3 py-8 text-center text-gray-500 sm:px-6">
                         Zatím žádné objednávky.
                       </td>
                     </tr>
@@ -92,16 +92,16 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                         className="hover:bg-white/[0.02] transition-colors"
                       >
-                          <td className="px-6 py-4 font-mono text-gray-500">#{order.readableId}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-3 font-mono text-gray-500 sm:px-5 sm:py-4">#{order.readableId}</td>
+                          <td className="px-3 py-3 sm:px-5 sm:py-4">
                               <div className="font-medium text-white">{order.serviceType}</div>
                               <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                                   <MapPin className="w-3 h-3" /> {order.address}
                               </div>
                           </td>
-                          <td className="px-6 py-4 text-gray-300">{order.customer.name || order.customer.email}</td>
-                          <td className="px-6 py-4 text-brand-yellow">{order.price ? `${order.price.toLocaleString('cs-CZ')} Kč` : '-'}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-3 text-gray-300 sm:px-5 sm:py-4">{order.customer.name || order.customer.email}</td>
+                          <td className="whitespace-nowrap px-3 py-3 text-brand-yellow sm:px-5 sm:py-4">{order.price ? `${order.price.toLocaleString('cs-CZ')} Kč` : '-'}</td>
+                          <td className="px-3 py-3 sm:px-5 sm:py-4">
                               {editingOrder === order.id ? (
                                 <div className="flex flex-col gap-2">
                                   <select 
@@ -145,7 +145,7 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                                   </span>
                               )}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-3 sm:px-5 sm:py-4">
                               {editingOrder === order.id ? (
                                 <div className="flex items-center gap-2">
                                   <select 
@@ -175,7 +175,7 @@ export default function AdminOrdersClient({ initialOrders, technicians, companie
                                 </span>
                               )}
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-3 py-3 text-right sm:px-5 sm:py-4">
                               {editingOrder === order.id ? (
                                 <div className="flex items-center justify-end gap-2">
                                   <button onClick={() => handleSaveStatus(order.id)} className="text-xs text-brand-yellow hover:underline">Uložit</button>

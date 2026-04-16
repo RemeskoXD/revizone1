@@ -10,8 +10,10 @@ import {
   Loader2,
   Wrench,
   Building2,
+  Home,
   Check,
   User,
+  Building,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -71,6 +73,36 @@ const packages: Package[] = [
     ],
     color: "from-blue-500 to-cyan-400",
   },
+  {
+    id: "realty",
+    role: "REALTY",
+    title: "Realitní makléř",
+    icon: <Home className="w-7 h-7" />,
+    description: "Pro realitní kanceláře a makléře",
+    benefits: [
+      "Objednávky revizí pro klienty",
+      "Správa nemovitostí v portfoliu",
+      "Přenos dokumentace na nové majitele",
+      "Přehled o stavu revizí",
+      "Sdílení zpráv s klienty",
+    ],
+    color: "from-emerald-500 to-green-400",
+  },
+  {
+    id: "svj",
+    role: "SVJ",
+    title: "SVJ",
+    icon: <Building className="w-7 h-7" />,
+    description: "Pro správu bytových domů",
+    benefits: [
+      "Správa revizí pro celý bytový dům",
+      "Přehled stavu revizí společných prostor",
+      "Automatické upozornění na blížící se termíny",
+      "Hromadné objednávání revizí",
+      "Dokumentace a zprávy na jednom místě",
+    ],
+    color: "from-rose-500 to-pink-400",
+  },
 ];
 
 function RegisterForm() {
@@ -80,20 +112,13 @@ function RegisterForm() {
   const callbackUrl = rawCallback.startsWith("/api") ? "/dashboard" : rawCallback;
   const inviteCode = searchParams.get("invite");
 
-  useEffect(() => {
-    if (inviteCode) {
-      const q = searchParams.toString();
-      router.replace(q ? `/registertest?${q}` : "/registertest");
-    }
-  }, [inviteCode, router, searchParams]);
-
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(inviteCode ? 2 : 1);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(inviteCode ? "PENDING_SUPPORT" : "");
   const [companyId, setCompanyId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -138,13 +163,20 @@ function RegisterForm() {
           password,
           role,
           companyId: role === "TECHNICIAN" ? companyId : undefined,
+          inviteCode,
         }),
       });
 
       if (res.ok) {
-        router.push(
-          `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
-        );
+        if (inviteCode) {
+          router.push(
+            `/login?message=${encodeURIComponent("Registrace byla úspěšná. Nyní vyčkejte na schválení administrátorem.")}`
+          );
+        } else {
+          router.push(
+            `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+          );
+        }
       } else {
         const data = await res.json();
         setError(data.message || "Došlo k chybě při registraci");
@@ -156,20 +188,16 @@ function RegisterForm() {
     }
   };
 
-  if (inviteCode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#111111]">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-yellow" />
-      </div>
-    );
-  }
-
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-[#111111] px-3 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-10">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[min(800px,140vw)] w-[min(800px,140vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-yellow/5 blur-3xl" />
 
+      <p className="relative z-10 mb-2 max-w-xl px-2 text-center text-[10px] uppercase tracking-wider text-brand-yellow/90 sm:text-xs">
+        Testovací registrace – všechny typy účtů a pozvánky
+      </p>
+
       <AnimatePresence mode="wait">
-        {step === 1 ? (
+        {step === 1 && !inviteCode ? (
           <motion.div
             key="step-1"
             initial={{ opacity: 0, y: 20 }}
@@ -184,11 +212,11 @@ function RegisterForm() {
               </div>
             </div>
 
-            <h1 className="text-center text-2xl font-bold text-white sm:text-3xl mb-2 px-1">
-              Vytvořte si účet
+            <h1 className="mb-2 px-1 text-center text-2xl font-bold text-white sm:text-3xl">
+              Vyberte si balíček
             </h1>
-            <p className="text-gray-400 text-center text-sm mb-8 sm:mb-10 px-1">
-              Vyberte typ účtu – veřejná beta Revizone
+            <p className="mb-8 text-center text-sm text-gray-400 sm:mb-10 px-1">
+              Zvolte typ účtu, který nejlépe odpovídá vašim potřebám
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
@@ -227,36 +255,28 @@ function RegisterForm() {
                   </ul>
 
                   <div className="flex items-center gap-2 text-sm font-semibold text-brand-yellow opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                    Pokračovat
+                    Vybrat balíček
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </motion.button>
               ))}
             </div>
 
-            <div className="mt-8 space-y-3 text-center text-sm text-gray-500 px-1">
-              <div>
-                Již máte účet?{" "}
-                <Link
-                  href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                  className="text-white hover:text-brand-yellow transition-colors"
-                >
-                  Přihlásit se
-                </Link>
-              </div>
-              <div>
-                <Link
-                  href={`/registertest?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                  className="text-gray-400 hover:text-brand-yellow transition-colors leading-relaxed"
-                >
-                  Další typy účtů a testovací registrace (SVJ, realitní makléř, …)
-                </Link>
-              </div>
-              <div className="text-xs text-gray-600">
-                <Link href="/obchodnipodminky" className="hover:text-gray-400">
-                  Obchodní podmínky a ochrana osobních údajů
-                </Link>
-              </div>
+            <div className="mt-8 text-center text-sm text-gray-500">
+              Již máte účet?{" "}
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+                className="text-white hover:text-brand-yellow transition-colors"
+              >
+                Přihlásit se
+              </Link>
+              {" · "}
+              <Link
+                href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+                className="text-gray-400 hover:text-brand-yellow transition-colors"
+              >
+                Veřejná beta registrace
+              </Link>
             </div>
           </motion.div>
         ) : (
@@ -274,7 +294,7 @@ function RegisterForm() {
               </div>
             </div>
 
-            {selectedPackage && (
+            {selectedPackage && !inviteCode && (
               <div className="flex items-center justify-center gap-2 mb-4">
                 <div
                   className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br ${selectedPackage.color} text-white`}
@@ -288,10 +308,12 @@ function RegisterForm() {
             )}
 
             <h1 className="text-2xl font-bold text-white text-center mb-2">
-              Dokončení registrace
+              {inviteCode ? "Připojit se k týmu" : "Vytvořte si účet"}
             </h1>
             <p className="text-gray-400 text-center text-sm mb-8">
-              Vyplňte své údaje
+              {inviteCode
+                ? "Vytvořte si účet zaměstnance"
+                : "Vyplňte své údaje pro dokončení registrace"}
             </p>
 
             {error && (
@@ -343,7 +365,23 @@ function RegisterForm() {
                 />
               </div>
 
-              {role === "TECHNICIAN" && (
+              {inviteCode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Typ účtu
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-brand-yellow/50 transition-colors"
+                  >
+                    <option value="PENDING_SUPPORT">Podpora</option>
+                    <option value="PENDING_CONTRACTOR">Zhotovitel</option>
+                  </select>
+                </div>
+              )}
+
+              {role === "TECHNICIAN" && !inviteCode && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -371,14 +409,16 @@ function RegisterForm() {
               )}
 
               <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-300 hover:text-white hover:border-white/25 transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Zpět
-                </button>
+                {!inviteCode && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-300 hover:text-white hover:border-white/25 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Zpět
+                  </button>
+                )}
 
                 <button
                   type="submit"
@@ -395,21 +435,14 @@ function RegisterForm() {
               </div>
             </form>
 
-            <div className="mt-6 space-y-3 text-center text-sm text-gray-500">
-              <div>
-                Již máte účet?{" "}
-                <Link
-                  href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                  className="text-white hover:text-brand-yellow transition-colors"
-                >
-                  Přihlásit se
-                </Link>
-              </div>
-              <div className="text-xs text-gray-600">
-                <Link href="/obchodnipodminky" className="hover:text-gray-400">
-                  Obchodní podmínky a ochrana osobních údajů
-                </Link>
-              </div>
+            <div className="mt-6 text-center text-sm text-gray-500">
+              Již máte účet?{" "}
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+                className="text-white hover:text-brand-yellow transition-colors"
+              >
+                Přihlásit se
+              </Link>
             </div>
           </motion.div>
         )}
@@ -418,7 +451,7 @@ function RegisterForm() {
   );
 }
 
-export default function RegisterPage() {
+export default function RegisterTestPage() {
   return (
     <Suspense
       fallback={

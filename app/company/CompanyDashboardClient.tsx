@@ -27,17 +27,17 @@ export default function CompanyDashboardClient({
 }: any) {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Řídící centrum</h1>
-          <p className="text-gray-400 text-sm">{companyName}</p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Řídící centrum</h1>
+          <p className="text-sm text-gray-400">{companyName}</p>
         </div>
-        <div className="flex gap-3">
-          <Link href="/company/radar" className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2">
-            <Radio className="w-4 h-4" /> Radar poptávek
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+          <Link href="/company/radar" className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10">
+            <Radio className="h-4 w-4 shrink-0" /> Radar poptávek
           </Link>
-          <Link href="/company/orders" className="px-4 py-2 bg-brand-yellow text-black text-sm font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors flex items-center gap-2">
-            <FileText className="w-4 h-4" /> Všechny zakázky
+          <Link href="/company/orders" className="flex items-center justify-center gap-2 rounded-lg bg-brand-yellow px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-yellow-hover">
+            <FileText className="h-4 w-4 shrink-0" /> Všechny zakázky
           </Link>
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function CompanyDashboardClient({
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
         <AnimatedItem delay={0.1}>
           <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-4">
             <FileText className="w-4 h-4 text-brand-yellow mb-2" />
@@ -149,8 +149,8 @@ export default function CompanyDashboardClient({
               <h3 className="font-semibold text-white flex items-center gap-2"><FileText className="w-4 h-4 text-brand-yellow" /> Poslední zakázky</h3>
               <Link href="/company/orders" className="text-xs text-brand-yellow hover:underline">Vše →</Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <div className="table-scroll -mx-2 px-2 sm:mx-0 sm:px-0">
+              <table className="w-full min-w-[560px] text-left text-sm">
                 <thead className="text-gray-500 border-b border-white/5 text-xs">
                   <tr>
                     <th className="pb-2 font-medium">ID</th>

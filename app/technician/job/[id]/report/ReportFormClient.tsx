@@ -253,7 +253,7 @@ export default function ReportFormClient({ order }: { order: any }) {
           <button onClick={addMeasurement} className="text-xs text-brand-yellow hover:underline flex items-center gap-1"><Plus className="w-3 h-3" /> Přidat</button>
         </div>
         {measurements.length === 0 ? (
-          <p className="text-xs text-gray-600 text-center py-4">Klikněte na "Přidat" pro přidání měření</p>
+          <p className="text-xs text-gray-600 text-center py-4">Klikněte na „Přidat“ pro přidání měření</p>
         ) : (
           <div className="space-y-2">
             {measurements.map((m, i) => (

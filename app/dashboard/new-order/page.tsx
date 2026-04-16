@@ -136,35 +136,35 @@ export default function NewOrderPage() {
 
   if (isSuccess) {
     return (
-      <div className="max-w-2xl mx-auto mt-12 text-center space-y-6">
-        <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-          <Check className="w-10 h-10 text-green-500" />
+      <div className="mx-auto mt-8 max-w-2xl space-y-6 px-3 text-center sm:mt-12 sm:px-4">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10">
+          <Check className="h-10 w-10 text-green-500" />
         </div>
-        <h2 className="text-3xl font-bold text-white">Objednávka odeslána!</h2>
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">Objednávka odeslána!</h2>
         <p className="text-gray-400">Potvrzení jsme zaslali na váš e-mail. Technik vás bude kontaktovat pro potvrzení termínu.</p>
-        <div className="flex justify-center gap-4 pt-4">
-          <Link href="/dashboard" className="px-6 py-3 bg-[#1A1A1A] text-white rounded-lg border border-white/10 hover:bg-[#252525] transition-colors">Zpět na přehled</Link>
-          <Link href="/dashboard/orders" className="px-6 py-3 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors">Sledovat objednávku</Link>
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-center sm:gap-4">
+          <Link href="/dashboard" className="rounded-lg border border-white/10 bg-[#1A1A1A] px-6 py-3 text-white transition-colors hover:bg-[#252525]">Zpět na přehled</Link>
+          <Link href="/dashboard/orders" className="rounded-lg bg-brand-yellow px-6 py-3 font-semibold text-black transition-colors hover:bg-brand-yellow-hover">Sledovat objednávku</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8 flex items-center gap-4">
-        <Link href="/dashboard" className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="mx-auto max-w-4xl px-3 pb-8 sm:px-4">
+      <div className="mb-6 flex items-start gap-3 sm:mb-8 sm:items-center sm:gap-4">
+        <Link href="/dashboard" className="shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white">
+          <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Nová objednávka revize</h1>
-          <p className="text-gray-400 text-sm">Vyplňte údaje o požadované revizi.</p>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Nová objednávka revize</h1>
+          <p className="text-sm text-gray-400 sm:text-base">Vyplňte údaje o požadované revizi.</p>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="mb-10 overflow-x-auto pb-2">
-        <div className="flex items-center justify-between relative min-w-[500px]">
+      <div className="table-scroll -mx-3 mb-8 px-3 pb-2 sm:mx-0 sm:mb-10 sm:px-0">
+        <div className="relative flex w-full min-w-[320px] max-w-full items-center justify-between sm:min-w-[500px]">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-[#1A1A1A] -z-10" />
           <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-brand-yellow -z-10 transition-all duration-500" style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }} />
           {steps.map(step => (
@@ -181,7 +181,7 @@ export default function NewOrderPage() {
       </div>
 
       {/* Form */}
-      <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-6 md:p-8 shadow-xl overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-white/5 bg-[#1A1A1A] p-4 shadow-xl sm:p-6 md:p-8">
         <AnimatePresence mode="wait">
           {/* Step 1: Service Type */}
           {currentStep === 1 && (
@@ -401,9 +401,9 @@ export default function NewOrderPage() {
                   urgency === 'urgent' ? { label: 'Naléhavost', value: '🔴 URGENTNÍ' } : null,
                   isFirstRevision ? { label: 'Typ revize', value: 'Výchozí (první) revize' } : null,
                 ].filter(Boolean).map((item, i) => (
-                  <div key={i} className="flex justify-between py-2 border-b border-white/5 last:border-0">
-                    <span className="text-gray-400 text-sm">{item!.label}</span>
-                    <span className="font-medium text-white text-sm text-right">{item!.value}</span>
+                  <div key={i} className="flex flex-col gap-1 border-b border-white/5 py-2 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <span className="shrink-0 text-sm text-gray-400">{item!.label}</span>
+                    <span className="min-w-0 break-words text-right text-sm font-medium text-white">{item!.value}</span>
                   </div>
                 ))}
                 {serviceType !== 'vlastni_revize' && (
@@ -438,22 +438,22 @@ export default function NewOrderPage() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex justify-between pt-8 mt-8 border-t border-white/10">
+        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-white/10 pt-6 sm:mt-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-8">
           <button type="button" onClick={prevStep} disabled={currentStep === 1}
-            className={cn("px-6 py-2.5 rounded-lg font-medium transition-colors",
-              currentStep === 1 ? "text-gray-600 cursor-not-allowed" : "text-gray-400 hover:text-white hover:bg-white/5"
+            className={cn("rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:px-6",
+              currentStep === 1 ? "cursor-not-allowed text-gray-600" : "text-gray-400 hover:bg-white/5 hover:text-white"
             )}>
             Zpět
           </button>
 
           {currentStep < steps.length ? (
             <button type="button" onClick={nextStep} disabled={!canProceed()}
-              className="flex items-center gap-2 px-6 py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors shadow-lg shadow-brand-yellow/10 disabled:opacity-50 disabled:cursor-not-allowed">
-              Pokračovat <ChevronRight className="w-4 h-4" />
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-yellow px-6 py-2.5 text-sm font-semibold text-black shadow-lg shadow-brand-yellow/10 transition-colors hover:bg-brand-yellow-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+              Pokračovat <ChevronRight className="h-4 w-4" />
             </button>
           ) : (
             <button type="button" onClick={onSubmit} disabled={isSubmitting}
-              className="flex items-center gap-2 px-8 py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors shadow-lg shadow-brand-yellow/10 disabled:opacity-50">
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-yellow px-6 py-2.5 text-sm font-semibold text-black shadow-lg shadow-brand-yellow/10 transition-colors hover:bg-brand-yellow-hover disabled:opacity-50 sm:w-auto sm:px-8">
               {isSubmitting ? 'Odesílání...' : 'Závazně objednat'}
             </button>
           )}

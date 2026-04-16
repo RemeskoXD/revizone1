@@ -43,9 +43,9 @@ export default function RoleRequestsClient({ initialRequests }: { initialRequest
   };
 
   return (
-    <div className="bg-[#111] border border-white/5 rounded-xl p-6">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+    <div className="rounded-xl border border-white/5 bg-[#111] p-4 sm:p-6">
+      <div className="table-scroll -mx-2 px-2 sm:mx-0 sm:px-0">
+        <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="text-gray-500 border-b border-white/5">
             <tr>
               <th className="pb-3 font-medium">Uživatel</th>

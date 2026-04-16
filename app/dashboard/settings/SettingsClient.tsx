@@ -389,6 +389,10 @@ export default function SettingsClient({ user }: { user: User }) {
                             setPasswordMessage({ type: 'error', text: 'Nová hesla se neshodují.' });
                             return;
                           }
+                          if (newPassword.length < 10) {
+                            setPasswordMessage({ type: 'error', text: 'Nové heslo musí mít alespoň 10 znaků.' });
+                            return;
+                          }
                           setIsLoading(true);
                           setPasswordMessage(null);
                           try {

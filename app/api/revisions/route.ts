@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const ip = getClientIp(req);
+  const limited = rateLimit(`revisions:${ip}`, 120, 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json([]);
+  }
+
   try {
     const categories = await prisma.revisionCategory.findMany({
       orderBy: [{ group: 'asc' }, { name: 'asc' }],

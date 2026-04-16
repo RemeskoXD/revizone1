@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, CheckCircle2, XCircle, AlertTriangle, Database, Server } from 'lucide-react';
+import { RefreshCw, CheckCircle2, XCircle, AlertTriangle, Database, Server, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type CheckResult = {
@@ -11,23 +11,53 @@ type CheckResult = {
   details?: string;
 };
 
+type MinimalResponse = {
+  mode: 'minimal';
+  status: string;
+  database: string;
+  message?: string;
+  hint?: string;
+};
+
+type DetailedResponse = {
+  mode: 'detailed';
+  results: CheckResult[];
+  summary: { ok: number; error: number; missing: number };
+};
+
 export default function HealthCheckPage() {
   const [results, setResults] = useState<CheckResult[]>([]);
   const [summary, setSummary] = useState<{ ok: number; error: number; missing: number } | null>(null);
+  const [minimal, setMinimal] = useState<MinimalResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCheck, setLastCheck] = useState<string | null>(null);
+  const [detailToken, setDetailToken] = useState('');
 
   const runCheck = async () => {
     setLoading(true);
+    setMinimal(null);
     try {
-      const res = await fetch('/api/health');
-      const data = await res.json();
-      setResults(data.results);
-      setSummary(data.summary);
+      const headers: HeadersInit = {};
+      const t = detailToken.trim();
+      if (t) headers.Authorization = `Bearer ${t}`;
+
+      const res = await fetch('/api/health', { headers, cache: 'no-store' });
+      const data = (await res.json()) as MinimalResponse | DetailedResponse;
+
+      if (data.mode === 'minimal') {
+        setMinimal(data);
+        setResults([]);
+        setSummary(null);
+      } else {
+        setMinimal(null);
+        setResults(data.results ?? []);
+        setSummary(data.summary ?? null);
+      }
       setLastCheck(new Date().toLocaleString('cs-CZ'));
     } catch (e) {
       setResults([{ name: 'API Health', status: 'error', message: 'Nepodařilo se spojit s API', details: String(e) }]);
       setSummary({ ok: 0, error: 1, missing: 0 });
+      setMinimal(null);
     } finally {
       setLoading(false);
     }
@@ -42,23 +72,66 @@ export default function HealthCheckPage() {
   return (
     <div className="min-h-screen bg-[#111] text-white p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <Database className="w-8 h-8 text-brand-yellow" />
+            <Database className="w-8 h-8 text-brand-yellow shrink-0" />
             <div>
               <h1 className="text-2xl font-bold">Diagnostika databáze</h1>
-              <p className="text-gray-400 text-sm">Kontrola všech tabulek, sloupců, indexů a proměnných prostředí</p>
+              <p className="text-gray-400 text-sm">
+                Veřejně je jen rychlá kontrola připojení. Úplná kontrola schématu vyžaduje tajný klíč z prostředí
+                (HEALTH_CHECK_SECRET nebo CRON_SECRET).
+              </p>
             </div>
           </div>
           <button
             onClick={runCheck}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-brand-yellow text-black font-bold rounded-xl hover:bg-brand-yellow-hover transition-all disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-yellow text-black font-bold rounded-xl hover:bg-brand-yellow-hover transition-all disabled:opacity-50 shrink-0"
           >
-            <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
+            <RefreshCw className={cn('w-5 h-5', loading && 'animate-spin')} />
             {loading ? 'Kontroluji...' : 'Spustit kontrolu'}
           </button>
         </div>
+
+        <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <KeyRound className="w-4 h-4 text-brand-yellow" />
+            <span>Volitelný klíč pro úplnou diagnostiku (stejná hodnota jako v Coolify u CRON_SECRET / HEALTH_CHECK_SECRET)</span>
+          </div>
+          <input
+            type="password"
+            value={detailToken}
+            onChange={(e) => setDetailToken(e.target.value)}
+            autoComplete="off"
+            placeholder="Nechte prázdné = jen rychlá kontrola DB"
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-brand-yellow/50"
+          />
+        </div>
+
+        {minimal && (
+          <div
+            className={cn(
+              'rounded-xl border p-6 flex items-start gap-3',
+              minimal.database === 'connected'
+                ? 'bg-green-500/10 border-green-500/20'
+                : 'bg-red-500/10 border-red-500/20'
+            )}
+          >
+            {minimal.database === 'connected' ? (
+              <CheckCircle2 className="w-8 h-8 text-green-500 shrink-0" />
+            ) : (
+              <XCircle className="w-8 h-8 text-red-500 shrink-0" />
+            )}
+            <div>
+              <h2 className="font-bold text-white">Rychlá kontrola</h2>
+              <p className="text-sm text-gray-300 mt-1">
+                Databáze: <strong>{minimal.database === 'connected' ? 'připojeno' : 'nepřipojeno'}</strong>
+              </p>
+              {minimal.message && <p className="text-sm text-red-300 mt-2">{minimal.message}</p>}
+              {minimal.hint && <p className="text-xs text-gray-500 mt-3">{minimal.hint}</p>}
+            </div>
+          </div>
+        )}
 
         {summary && (
           <div className="grid grid-cols-3 gap-4">
@@ -92,69 +165,79 @@ export default function HealthCheckPage() {
           <div className="space-y-2">
             {lastCheck && <p className="text-xs text-gray-500 mb-2">Poslední kontrola: {lastCheck}</p>}
 
-            {/* Errors first */}
-            {results.filter(r => r.status === 'error').length > 0 && (
+            {results.filter((r) => r.status === 'error').length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider mb-2">Chyby (nutno opravit)</h3>
-                {results.filter(r => r.status === 'error').map((r, i) => (
-                  <div key={`e-${i}`} className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 mb-2">
-                    <div className="flex items-start gap-3">
-                      {statusIcon(r.status)}
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{r.name}</p>
-                        <p className="text-sm text-red-400">{r.message}</p>
-                        {r.details && (
-                          <pre className="mt-2 text-xs text-red-300 bg-red-500/10 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">{r.details}</pre>
-                        )}
+                {results
+                  .filter((r) => r.status === 'error')
+                  .map((r, i) => (
+                    <div key={`e-${i}`} className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 mb-2">
+                      <div className="flex items-start gap-3">
+                        {statusIcon(r.status)}
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{r.name}</p>
+                          <p className="text-sm text-red-400">{r.message}</p>
+                          {r.details && (
+                            <pre className="mt-2 text-xs text-red-300 bg-red-500/10 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">
+                              {r.details}
+                            </pre>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
 
-            {/* Missing */}
-            {results.filter(r => r.status === 'missing').length > 0 && (
+            {results.filter((r) => r.status === 'missing').length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider mb-2">Chybějící (volitelné)</h3>
-                {results.filter(r => r.status === 'missing').map((r, i) => (
-                  <div key={`m-${i}`} className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mb-2">
-                    <div className="flex items-start gap-3">
-                      {statusIcon(r.status)}
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{r.name}</p>
-                        <p className="text-sm text-yellow-400">{r.message}</p>
-                        {r.details && (
-                          <pre className="mt-2 text-xs text-yellow-300 bg-yellow-500/10 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">{r.details}</pre>
-                        )}
+                {results
+                  .filter((r) => r.status === 'missing')
+                  .map((r, i) => (
+                    <div key={`m-${i}`} className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mb-2">
+                      <div className="flex items-start gap-3">
+                        {statusIcon(r.status)}
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{r.name}</p>
+                          <p className="text-sm text-yellow-400">{r.message}</p>
+                          {r.details && (
+                            <pre className="mt-2 text-xs text-yellow-300 bg-yellow-500/10 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">
+                              {r.details}
+                            </pre>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
 
-            {/* OK */}
             <div>
               <h3 className="text-sm font-bold text-green-400 uppercase tracking-wider mb-2">V pořádku</h3>
-              {results.filter(r => r.status === 'ok').map((r, i) => (
-                <div key={`o-${i}`} className="bg-[#1A1A1A] border border-white/5 rounded-lg p-3 mb-1 flex items-center gap-3">
-                  {statusIcon(r.status)}
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm text-white">{r.name}</span>
-                    <span className="text-xs text-gray-500">{r.message}</span>
+              {results
+                .filter((r) => r.status === 'ok')
+                .map((r, i) => (
+                  <div key={`o-${i}`} className="bg-[#1A1A1A] border border-white/5 rounded-lg p-3 mb-1 flex items-center gap-3">
+                    {statusIcon(r.status)}
+                    <div className="flex-1 flex items-center justify-between gap-2">
+                      <span className="text-sm text-white">{r.name}</span>
+                      <span className="text-xs text-gray-500 text-right">{r.message}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
 
-        {results.length === 0 && !loading && (
+        {!loading && !minimal && results.length === 0 && !summary && (
           <div className="bg-[#1A1A1A] border border-white/5 rounded-xl p-12 text-center">
             <Server className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Klikněte na "Spustit kontrolu"</h3>
-            <p className="text-gray-500 text-sm">Zkontroluje se připojení k databázi, všech 17 tabulek, sloupce, indexy a proměnné prostředí.</p>
+            <h3 className="text-lg font-medium text-white mb-2">Klikněte na „Spustit kontrolu“</h3>
+            <p className="text-gray-500 text-sm">
+              Bez klíče uvidíte jen stav připojení k databázi. S klíčem z Coolify (CRON_SECRET nebo HEALTH_CHECK_SECRET) získáte
+              kontrolu tabulek, sloupců a proměnných.
+            </p>
           </div>
         )}
       </div>

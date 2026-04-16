@@ -31,25 +31,26 @@ export function AdminSidebarClient({ isOpen, onClose }: AdminSidebarClientProps)
     <>
       <div
         className={cn(
-          "fixed inset-0 bg-black/80 z-40 md:hidden transition-opacity duration-300",
+          "fixed inset-0 bg-black/80 z-40 lg:hidden transition-opacity duration-300",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
+        aria-hidden
       />
 
       <div className={cn(
-        "flex h-full w-64 flex-col bg-[#111] border-r border-white/10 z-50",
-        "fixed md:relative inset-y-0 left-0 transition-transform duration-300",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        "flex h-full w-[min(18rem,88vw)] sm:w-64 flex-col bg-[#111] border-r border-white/10 z-50",
+        "fixed lg:relative inset-y-0 left-0 transition-transform duration-300 pt-[env(safe-area-inset-top)] lg:pt-0",
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="flex h-16 items-center justify-between px-6 border-b border-white/10">
-          <Link href="/admin" className="flex items-center gap-2">
-             <div className="relative flex items-center justify-center w-8 h-8 bg-red-600 rounded-md">
+        <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 px-4 sm:px-6 border-b border-white/10">
+          <Link href="/admin" className="flex min-w-0 items-center gap-2" onClick={onClose}>
+             <div className="relative flex shrink-0 items-center justify-center w-8 h-8 bg-red-600 rounded-md">
                 <ShieldAlert className="w-5 h-5 text-white" />
              </div>
-             <span className="text-xl font-bold text-white tracking-tight">REVIZONE APLIKACE</span>
+             <span className="text-base sm:text-lg font-bold text-white tracking-tight truncate">Revizone</span>
           </Link>
-          <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white">
+          <button type="button" onClick={onClose} className="lg:hidden shrink-0 touch-manipulation rounded-lg p-2 text-gray-400 hover:text-white" aria-label="Zavřít menu">
             <X className="w-5 h-5" />
           </button>
         </div>

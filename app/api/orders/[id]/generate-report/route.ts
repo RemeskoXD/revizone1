@@ -3,6 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateReportHtml, type ReportData } from '@/lib/report-template';
+import { readJsonBody, PayloadTooLargeError } from '@/lib/json-body';
+import { rateLimit } from '@/lib/rate-limit';
+
+const BODY_MAX = 600_000;
+const MAX_LIST = 200;
+const RESULTS = new Set(['PASS', 'FAIL', 'PASS_WITH_NOTES']);
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,11 +17,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
-    const reportData: Partial<ReportData> = await req.json();
+    const rl = rateLimit(`gen-report:${session.user.id}`, 60, 60 * 60 * 1000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { message: 'Příliš mnoho generování. Zkuste to později.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } }
+      );
+    }
 
-    const order = await prisma.order.findUnique({
-      where: { readableId: id },
+    const { id } = await params;
+    const reportData = await readJsonBody<Partial<ReportData>>(req, BODY_MAX);
+
+    const order = await prisma.order.findFirst({
+      where: { OR: [{ id }, { readableId: id }] },
       include: {
         customer: { select: { name: true, email: true, phone: true } },
         technician: { select: { name: true, phone: true } },
@@ -30,6 +44,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
+    const rawResult = reportData.result;
+    const result =
+      typeof rawResult === 'string' && RESULTS.has(rawResult) ? rawResult : 'PASS';
+
+    const checkpoints = Array.isArray(reportData.checkpoints)
+      ? reportData.checkpoints.slice(0, MAX_LIST)
+      : [];
+    const measurements = Array.isArray(reportData.measurements)
+      ? reportData.measurements.slice(0, MAX_LIST)
+      : [];
+    const defects = Array.isArray(reportData.defects) ? reportData.defects.slice(0, MAX_LIST) : [];
+
     const fullData: ReportData = {
       orderReadableId: order.readableId,
       serviceType: order.serviceType,
@@ -39,23 +65,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       customerPhone: order.customer?.phone || 'Neuvedeno',
       customerEmail: order.customer?.email || 'Neuvedeno',
       technicianName: reportData.technicianName || order.technician?.name || session.user.name || 'Neuvedeno',
-      technicianCert: reportData.technicianCert || '',
+      technicianCert: String(reportData.technicianCert || '').slice(0, 500),
       technicianPhone: reportData.technicianPhone || order.technician?.phone || '',
       revisionDate: reportData.revisionDate || new Date().toLocaleDateString('cs-CZ'),
-      nextRevisionDate: reportData.nextRevisionDate || '',
-      result: reportData.result || 'PASS',
-      standards: reportData.standards || 'ČSN 33 1500, ČSN 33 2000-6',
-      checkpoints: reportData.checkpoints || [],
-      measurements: reportData.measurements || [],
-      defects: reportData.defects || [],
-      notes: reportData.notes || '',
-      conclusion: reportData.conclusion || '',
+      nextRevisionDate: String(reportData.nextRevisionDate || '').slice(0, 80),
+      result,
+      standards: String(reportData.standards || 'ČSN 33 1500, ČSN 33 2000-6').slice(0, 500),
+      checkpoints,
+      measurements,
+      defects,
+      notes: String(reportData.notes || '').slice(0, 20_000),
+      conclusion: String(reportData.conclusion || '').slice(0, 10_000),
     };
 
     const html = generateReportHtml(fullData);
 
     return NextResponse.json({ html });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json({ message: 'Data zprávy jsou příliš velká' }, { status: 413 });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: 'Neplatný formát dat' }, { status: 400 });
+    }
     console.error('Generate report error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }

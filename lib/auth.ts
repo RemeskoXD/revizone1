@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
+import { getNextAuthJwtSecret } from "./jwt-secret";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -132,5 +133,5 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || "super-secret-key-for-dev",
+  secret: getNextAuthJwtSecret(),
 };

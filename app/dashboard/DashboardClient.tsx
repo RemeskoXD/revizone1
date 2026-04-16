@@ -71,17 +71,17 @@ export default function DashboardClient({
   return (
     <div className="space-y-8">
       {/* Welcome + Quick Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Vítejte, {user.name?.split(' ')[0] || 'uživateli'} 👋</h1>
-          <p className="text-gray-400 mt-1">Váš přehled revizí a termínů.</p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Vítejte, {user.name?.split(' ')[0] || 'uživateli'} 👋</h1>
+          <p className="mt-1 text-sm text-gray-400 sm:text-base">Váš přehled revizí a termínů.</p>
         </div>
-        <div className="flex gap-3 flex-wrap">
-          <button onClick={handleShareAll} disabled={isSharing} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg border border-white/10 transition-colors flex items-center gap-2 disabled:opacity-50">
-            <Share2 className="w-4 h-4" /> {isSharing ? 'Generuji...' : 'Sdílet revize'}
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+          <button type="button" onClick={handleShareAll} disabled={isSharing} className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50">
+            <Share2 className="h-4 w-4 shrink-0" /> {isSharing ? 'Generuji...' : 'Sdílet revize'}
           </button>
-          <Link href="/dashboard/new-order" className="px-4 py-2 bg-brand-yellow text-black text-sm font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors flex items-center gap-2">
-            <PlusCircle className="w-4 h-4" /> Nová objednávka
+          <Link href="/dashboard/new-order" className="flex items-center justify-center gap-2 rounded-lg bg-brand-yellow px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-yellow-hover">
+            <PlusCircle className="h-4 w-4 shrink-0" /> Nová objednávka
           </Link>
         </div>
       </div>

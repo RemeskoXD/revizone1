@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { sendMail } from "@/lib/mail";
 import { orderConfirmationEmail } from "@/lib/email-templates";
 import crypto from "crypto";
+import { readJsonBody, PayloadTooLargeError } from "@/lib/json-body";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: Request) {
   try {
@@ -89,13 +91,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Neautorizováno" }, { status: 401 });
     }
 
-    const { serviceType, propertyType, address, notes, reportFile, preferredDate, revisionCategoryId } = await req.json();
+    const rl = rateLimit(`order-create:${session.user.id}`, 40, 60 * 60 * 1000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { message: "Příliš mnoho nových objednávek za hodinu. Zkuste to později." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
+    const body = await readJsonBody<{
+      serviceType?: string;
+      propertyType?: string;
+      address?: string;
+      notes?: string | null;
+      reportFile?: string | null;
+      preferredDate?: string | null;
+      revisionCategoryId?: string | null;
+    }>(req, 96_384);
+
+    let { serviceType, propertyType, address, notes, reportFile, preferredDate, revisionCategoryId } = body;
 
     if (!serviceType || !propertyType || !address) {
       return NextResponse.json({ message: "Chybí povinné údaje" }, { status: 400 });
     }
 
-    const readableId = `ORD-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    serviceType = String(serviceType).slice(0, 120);
+    propertyType = String(propertyType).slice(0, 120);
+    address = String(address).slice(0, 500);
+    notes = notes != null ? String(notes).slice(0, 4000) : undefined;
+    reportFile = reportFile != null ? String(reportFile).slice(0, 500) : undefined;
+    revisionCategoryId = revisionCategoryId != null ? String(revisionCategoryId).slice(0, 80) : undefined;
+
+    const idSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const readableId = `ORD-${new Date().getFullYear()}-${idSuffix}`;
 
     let price = 0;
     switch (serviceType) {
@@ -175,6 +203,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json({ message: "Požadavek je příliš velký" }, { status: 413 });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: "Neplatný formát dat" }, { status: 400 });
+    }
     console.error("Error creating order:", error);
     return NextResponse.json({ message: "Chyba při vytváření objednávky" }, { status: 500 });
   }

@@ -159,34 +159,36 @@ export default function JobDetailClient({ order, currentUser, addressHistory = [
   }[s] || 'bg-yellow-500/10 text-yellow-500');
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-6xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mx-auto max-w-6xl space-y-6 px-1 sm:px-0">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/technician/queue" className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <Link href="/technician/queue" className="shrink-0 self-start rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white sm:mt-0.5">
+          <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-white">{order.serviceType}</h1>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="text-xl font-bold text-white sm:text-2xl">{order.serviceType}</h1>
               <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusColor(status))}>{statusLabel(status)}</span>
               {order.isPublic && status === 'PENDING' && (
                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-brand-yellow/10 text-brand-yellow">Veřejná</span>
               )}
             </div>
-            <p className="text-gray-500 text-sm mt-1">#{order.readableId} · {order.propertyType} · {new Date(order.createdAt).toLocaleDateString('cs-CZ')}</p>
+            <p className="mt-1 text-sm text-gray-500">#{order.readableId} · {order.propertyType} · {new Date(order.createdAt).toLocaleDateString('cs-CZ')}</p>
           </div>
           
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           {canClaim && (
-            <button onClick={handleClaim} disabled={isClaiming} className="px-6 py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50 flex items-center gap-2">
-              {isClaiming ? 'Přijímám...' : <><Briefcase className="w-4 h-4" /> Přijmout zakázku</>}
+            <button onClick={handleClaim} disabled={isClaiming} className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-yellow px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-yellow-hover disabled:opacity-50 sm:w-auto">
+              {isClaiming ? 'Přijímám...' : <><Briefcase className="h-4 w-4" /> Přijmout zakázku</>}
             </button>
           )}
           {canStart && (
-            <button onClick={handleStartWork} className="px-6 py-2.5 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
-              <Clock className="w-4 h-4" /> Začít pracovat
+            <button onClick={handleStartWork} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600 sm:w-auto">
+              <Clock className="h-4 w-4" /> Začít pracovat
             </button>
           )}
+          </div>
         </div>
       </div>
 
