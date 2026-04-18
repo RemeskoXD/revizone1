@@ -5,6 +5,10 @@ declare module "next-auth" {
     user: {
       id: string
       role: string
+      /** True when účet je zablokován (bannedAt) – klient by měl odhlásit. */
+      blocked?: boolean
+      /** Technik/firma – platnost oprávnění k revizím vypršela. */
+      revisionAuthExpired?: boolean
     } & DefaultSession["user"]
   }
 

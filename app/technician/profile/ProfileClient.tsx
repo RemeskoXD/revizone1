@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Mail, Phone, Building, Save, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, Building, Save, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { isRevisionAuthExpired } from '@/lib/revision-auth-core';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 
@@ -54,6 +55,45 @@ export default function ProfileClient({ user }: { user: any }) {
       <div>
         <h1 className="text-2xl font-bold text-white">Můj profil</h1>
         <p className="text-gray-400 mt-1">Spravujte své osobní údaje a nastavení účtu.</p>
+      </div>
+
+      <div
+        className={`rounded-xl border p-4 sm:p-5 ${
+          user.revisionAuthValidUntil == null
+            ? 'border-amber-500/30 bg-amber-500/5'
+            : isRevisionAuthExpired('TECHNICIAN', user.revisionAuthValidUntil)
+              ? 'border-red-500/40 bg-red-500/10'
+              : 'border-emerald-500/25 bg-emerald-500/5'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {user.revisionAuthValidUntil != null && isRevisionAuthExpired('TECHNICIAN', user.revisionAuthValidUntil) ? (
+            <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
+          ) : (
+            <ShieldCheck className="h-5 w-5 shrink-0 text-brand-yellow" />
+          )}
+          <div>
+            <h2 className="font-semibold text-white">Oprávnění k provádění revizí</h2>
+            {user.revisionAuthValidUntil == null ? (
+              <p className="mt-1 text-sm text-amber-200/90">
+                Platnost oprávnění zatím není v systému nastavena. Kontaktujte administrátora Revizone.
+              </p>
+            ) : isRevisionAuthExpired('TECHNICIAN', user.revisionAuthValidUntil) ? (
+              <p className="mt-1 text-sm text-red-200">
+                Platnost vypršela {new Date(user.revisionAuthValidUntil).toLocaleDateString('cs-CZ')}. Obnovte oprávnění u
+                administrátora.
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-gray-300">
+                Platné do{' '}
+                <span className="font-medium text-emerald-300">
+                  {new Date(user.revisionAuthValidUntil).toLocaleDateString('cs-CZ')}
+                </span>{' '}
+                (včetně uvedeného dne).
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-[#1A1A1A] border border-white/5 rounded-xl overflow-hidden">

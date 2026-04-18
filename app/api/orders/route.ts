@@ -7,6 +7,7 @@ import { orderConfirmationEmail } from "@/lib/email-templates";
 import crypto from "crypto";
 import { readJsonBody, PayloadTooLargeError } from "@/lib/json-body";
 import { rateLimit } from "@/lib/rate-limit";
+import { getOrderTotalPrice } from "@/lib/order-pricing";
 
 export async function GET(req: Request) {
   try {
@@ -101,15 +102,28 @@ export async function POST(req: Request) {
 
     const body = await readJsonBody<{
       serviceType?: string;
+      /** Interní kód typu služby (např. elektro_byt) – pro výpočet ceny */
+      serviceTypeId?: string | null;
       propertyType?: string;
       address?: string;
       notes?: string | null;
       reportFile?: string | null;
       preferredDate?: string | null;
       revisionCategoryId?: string | null;
+      /** Urgentní termín = příplatek nad základní cenu */
+      isUrgent?: boolean;
     }>(req, 96_384);
 
-    let { serviceType, propertyType, address, notes, reportFile, preferredDate, revisionCategoryId } = body;
+    let {
+      serviceType,
+      serviceTypeId,
+      propertyType,
+      address,
+      notes,
+      reportFile,
+      preferredDate,
+      revisionCategoryId,
+    } = body;
 
     if (!serviceType || !propertyType || !address) {
       return NextResponse.json({ message: "Chybí povinné údaje" }, { status: 400 });
@@ -121,19 +135,22 @@ export async function POST(req: Request) {
     notes = notes != null ? String(notes).slice(0, 4000) : undefined;
     reportFile = reportFile != null ? String(reportFile).slice(0, 500) : undefined;
     revisionCategoryId = revisionCategoryId != null ? String(revisionCategoryId).slice(0, 80) : undefined;
+    const serviceTypeIdNorm =
+      serviceTypeId != null && String(serviceTypeId).trim() !== ""
+        ? String(serviceTypeId).slice(0, 120)
+        : null;
+
+    const isVlastni = serviceTypeIdNorm === "vlastni_revize";
 
     const idSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
     const readableId = `ORD-${new Date().getFullYear()}-${idSuffix}`;
 
-    let price = 0;
-    switch (serviceType) {
-      case 'elektro_byt': price = 2500; break;
-      case 'elektro_dum': price = 3500; break;
-      case 'plyn': price = 1800; break;
-      case 'hromosvod': price = 3000; break;
-      case 'vlastni_revize': price = 0; break;
-      default: price = 1500;
-    }
+    const isUrgent = body.isUrgent === true;
+    const priceKey = serviceTypeIdNorm ?? "";
+    const price = getOrderTotalPrice({
+      serviceTypeId: priceKey || "unknown",
+      isUrgent: !isVlastni && isUrgent,
+    });
 
     const cancelToken = crypto.randomBytes(24).toString('hex');
 
@@ -145,14 +162,15 @@ export async function POST(req: Request) {
       address,
       notes,
       price,
-      status: serviceType === 'vlastni_revize' ? "COMPLETED" : "PENDING",
+      isUrgent: !isVlastni && isUrgent,
+      status: isVlastni ? "COMPLETED" : "PENDING",
       reportFile: reportFile || null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,
       revisionCategoryId: revisionCategoryId || null,
       cancelToken,
     };
 
-    if (serviceType !== 'vlastni_revize') {
+    if (!isVlastni) {
       // Find the highest priority technician or company
       const highestPriorityUser = await prisma.user.findFirst({
         where: {
@@ -183,7 +201,7 @@ export async function POST(req: Request) {
       data: orderData
     });
 
-    if (serviceType !== 'vlastni_revize') {
+    if (!isVlastni) {
       const customer = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { email: true, emailNotifications: true },
@@ -195,6 +213,7 @@ export async function POST(req: Request) {
           address: order.address,
           price: order.price,
           preferredDate: order.preferredDate?.toISOString() || null,
+          isUrgent: order.isUrgent,
           cancelToken,
         });
         sendMail({ to: customer.email, ...emailData }).catch(console.error);

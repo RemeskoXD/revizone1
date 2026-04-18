@@ -15,9 +15,18 @@ model User {
   password      String?
   phone         String?
   role          String    @default("CUSTOMER")
+  /// Když je nastaveno, uživatel se nemůže přihlásit a aktivní relace je ukončena.
+  bannedAt      DateTime?
   isDeleted     Boolean   @default(false)
   priority      Int       @default(0)
   emailNotifications Boolean @default(true)
+  accountStatus String @default("ACTIVE")
+  ico           String? @db.VarChar(20)
+  address       String? @db.VarChar(500)
+  licenseDocument String? @db.LongText
+  licenseMimeType String? @db.VarChar(120)
+  expectedTechnicians Int?
+  pendingCompanyInviteCode String? @db.VarChar(80)
   
   companyId     String?
   company       User?     @relation("CompanyTechnicians", fields: [companyId], references: [id])
@@ -25,6 +34,12 @@ model User {
   
   inviteCode    String?   @unique
   commissionRate Float?   @default(100)
+
+  stripeCustomerId     String?   @unique
+  lastStripePaymentAt  DateTime?
+  licenseValidUntil    DateTime?
+  /// Platnost oprávnění vykonávat revize (technik / firma); nastavuje administrátor při schválení nebo později.
+  revisionAuthValidUntil DateTime?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -46,6 +61,20 @@ model User {
   customerReviews Review[]       @relation("CustomerReviews")
   technicianReviews Review[]     @relation("TechnicianReviews")
   accountDeletionRequests AccountDeletionRequest[]
+  pushDevices       PushDevice[]
+}
+
+/// FCM / push token z mobilní aplikace – uloženo ve stejné DB jako Revizone (DATABASE_URL).
+model PushDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @db.VarChar(512)
+  platform  String   @default("android")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model AccountDeletionRequest {
@@ -121,6 +150,8 @@ model Order {
   isPublic      Boolean   @default(false) // If true, available to all (after 1 day expires)
   reportFile    String?   @db.LongText // Base64 encoded PDF
   price         Float?
+  /// Zákazník zvolil urgentní termín (+ příplatek dle ceníku, typicky URGENT_SURCHARGE).
+  isUrgent      Boolean   @default(false)
   preferredDate DateTime? // Customer's preferred date (orientation)
   scheduledDate DateTime? // Technician's confirmed date
   scheduledNote String?   @db.Text // Technician's note about scheduling
@@ -271,6 +302,12 @@ model OrderPhoto {
   imageData String   @db.LongText
   caption   String?
   uploadedBy String
+  createdAt DateTime @default(now())
+}
+
+/// Idempotence Stripe webhooků (event.id = evt_…).
+model StripeWebhookEvent {
+  id        String   @id @db.VarChar(255)
   createdAt DateTime @default(now())
 }
 

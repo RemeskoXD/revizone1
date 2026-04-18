@@ -47,6 +47,9 @@ export default function ObchodniPodminkyPage() {
 
       <main className="mx-auto max-w-3xl px-4 py-8 pb-16 sm:px-6">
         <p className="mb-2 text-xs uppercase tracking-wider text-brand-yellow/90">Platné od 16. 4. 2026</p>
+        <p className="mb-6 text-xs text-gray-500">
+          Doplnění k předplatnému přístupu ke Službě (zprostředkování plateb Stripe): 18. 4. 2026.
+        </p>
         <p className="mb-10 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400">
           Tento dokument slouží jako přehled pravidel používání služby <strong className="text-gray-300">Revizone</strong>{' '}
           (webová aplikace a související mobilní klient / PWA) a jako informace o zpracování osobních údajů ve smyslu nařízení
@@ -171,8 +174,12 @@ export default function ObchodniPodminkyPage() {
             V <strong className="text-white">aktuálně nasazené verzi</strong> webové aplikace Revizone{' '}
             <strong className="text-white">neprovádíme měření návštěvnosti přes Google Analytics</strong> ani{' '}
             <strong className="text-white">nesdílíme data s Firebase</strong> (např. Analytics / Crashlytics) — tyto nástroje
-            v kódu Služby nejsou integrovány. Infrastrukturu (hosting, databáze, e-mail) zajišťují vybraní poskytovatelé v roli
-            zpracovatelů; jejich přehled lze vyžádat na kontaktním e-mailu. Pokud by se v budoucnu analytika nebo nástroje třetích
+            v kódu Služby nejsou integrovány.{' '}
+            <strong className="text-white">Platby předplatného</strong> za přístup ke Službě, pokud jsou nabízeny, probíhají přes
+            poskytovatele <strong className="text-white">Stripe</strong>; platební údaje zadáváte v rozhraní Stripe a jejich
+            zpracování se řídí dokumentací Stripe (viz též oddíl 4 a GDPR níže). Infrastrukturu (hosting, databáze, e-mail)
+            zajišťují vybraní poskytovatelé v roli zpracovatelů; jejich přehled lze vyžádat na kontaktním e-mailu. Pokud by se v
+            budoucnu analytika nebo nástroje třetích
             stran doplnily, tento text a údaje v konzoli vývojáře Google Play budou aktualizovány.
           </p>
         </div>
@@ -251,6 +258,33 @@ export default function ObchodniPodminkyPage() {
             <p>
               Storno podmínek jednotlivé objednávky se řídí dohodou stran a občanským zákoníkem, pokud není sjednáno jinak.
             </p>
+            <p>
+              <strong className="text-white">Předplatné za přístup ke Službě (licence / využívání platformy).</strong> Pokud je
+              v rozhraní Služby nabízeno placené předplatné nebo obdobný poplatek za přístup k funkcím, probíhá platba
+              zprostředkováním prostřednictvím platební platformy{' '}
+              <strong className="text-white">Stripe</strong> (společnost Stripe, Inc. a související subjekty). Úhradu karty
+              nebo jinou platební transakci, vystavení platebních dokladů a správu předplatného v rozsahu platebního vztahu
+              upravují zejména obchodní podmínky, ceník a zásady ochrany soukromí Stripe zveřejněné na{' '}
+              <a
+                href="https://stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-yellow hover:underline"
+              >
+                stripe.com
+              </a>{' '}
+              a v uživatelském rozhraní při platbě. Provozovatel Služby vám umožní přístup k placeným funkcím podle stavu
+              úhrady v systému Služby po potvrzení platby (včetně zpracování prostřednictvím webhooků a účtu u Stripe).
+            </p>
+            <p>
+              <strong className="text-white">Správa a ukončení předplatného.</strong> Faktury za předplatné, platební metodu,
+              obnovení nebo zrušení předplatného můžete v obvyklém případě spravovat v{' '}
+              <strong className="text-white">zákaznickém portálu Stripe</strong> (Customer Billing Portal), k němuž vás Služba
+              odkáže z nastavení účtu, pokud je tato funkce aktivní. Nejedná se o oddělenou smlouvu uzavřenou s provozovatelem
+              Služby mimo Stripe u každé jednotlivé transakce; právní rámec plateb stanoví Stripe a vámi zvolené podmínky v
+              jejich rozhraní. Výpadky platební brány, prodlení potvrzení platby nebo změny u Stripe nejsou vyloučeny;
+              provozovatel vynaloží přiměřené úsilí k obnovení přístupu po řádném uhrazení.
+            </p>
           </Section>
 
           <Section id="obsah" title="5. Chování uživatelů a zakázané jednání">
@@ -298,6 +332,13 @@ export default function ObchodniPodminkyPage() {
               pověřit zpracováním zpracovatele (např. poskytovatele hostingu, e-mailové infrastruktury, analytických nástrojů
               v rozsahu nezbytném). Seznam zpracovatelů lze vyžádat na kontaktním e-mailu.
             </p>
+            <p>
+              <strong className="text-white">Platby předplatného (Stripe).</strong> Údaje zadané při platbě předplatného za
+              přístup ke Službě (platební karta, fakturační údaje v rozsahu vyžádaném platební bránou) zpracovává v tomto účelu
+              poskytovatel platebních služeb <strong className="text-white">Stripe</strong> podle svých zásad a smluvních
+              podmínek; provozovatel Služby přijímá od Stripe informace o stavu platby a identifikaci zákazníka v rozsahu nutném
+              pro správu přístupu k placeným funkcím. Podrobnosti o zpracování v platebním kanálu jsou uvedeny u Stripe.
+            </p>
             <p className="font-medium text-white">9.2 Kategorie osobních údajů</p>
             <p>
               Rozsah v praxi odpovídá přehledu v části{' '}
@@ -315,7 +356,11 @@ export default function ObchodniPodminkyPage() {
               </li>
               <li>
                 technické údaje: IP adresa u požadavků na server, provozní logy, cookies / token relace pro přihlášení
-                (NextAuth), informace z HTTP hlaviček (např. uživatelský agent prohlížeče).
+                (NextAuth), informace z HTTP hlaviček (např. uživatelský agent prohlížeče);
+              </li>
+              <li>
+                u předplatného: údaje o stavu úhrady a přístupu k placeným funkcím, identifikátor zákazníka u platebního
+                zprostředkovatele (např. Stripe) v rozsahu předaném do Služby.
               </li>
             </ul>
             <p className="font-medium text-white">9.3 Účely a právní základy</p>

@@ -7,6 +7,7 @@ import {
   MapPin, Upload, Building, Info, ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getOrderTotalPrice, getBasePriceForServiceTypeId, URGENT_SURCHARGE_CZK, formatPriceCzk } from '@/lib/order-pricing';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -88,6 +89,11 @@ export default function NewOrderPage() {
   };
 
   const selectedService = SERVICE_TYPES.find(s => s.id === serviceType);
+  const estimatedPrice = getOrderTotalPrice({
+    serviceTypeId: serviceType || 'unknown',
+    isUrgent: serviceType !== 'vlastni_revize' && urgency === 'urgent',
+  });
+  const basePriceOnly = getBasePriceForServiceTypeId(serviceType);
 
   const canProceed = () => {
     if (currentStep === 1) return !!serviceType;
@@ -117,10 +123,11 @@ export default function NewOrderPage() {
             area ? `Plocha: ${area} m²` : '',
             accessInfo ? `Přístup: ${accessInfo}` : '',
             isFirstRevision ? 'Typ: Výchozí (první) revize' : '',
-            urgency === 'urgent' ? 'URGENTNÍ' : '',
             `Kontakt: ${contactName}, tel: ${contactPhone}, e-mail: ${contactEmail}`,
           ].filter(Boolean).join('\n'),
           preferredDate: preferredDate || null,
+          serviceTypeId: serviceType,
+          isUrgent: serviceType !== 'vlastni_revize' && urgency === 'urgent',
           reportFile: serviceType === 'vlastni_revize' ? reportFile : null,
           revisionCategoryId: selectedCategoryId || null,
         }),
@@ -328,30 +335,35 @@ export default function NewOrderPage() {
               ) : (
                 <>
                   <h3 className="text-xl font-semibold text-white">Kdy se vám to hodí?</h3>
-                  <p className="text-sm text-gray-400">Technik vám termín potvrdí nebo navrhne nejbližší možný.</p>
+                  <p className="text-sm text-gray-400">
+                    <strong className="text-gray-300">Standardní:</strong> zvolíte preferované datum jako orientaci – technik ho potvrdí nebo po domluvě navrhne jiný.
+                    {' '}
+                    <strong className="text-gray-300">Urgentní:</strong> prioritní zařazení, k ceně se přičte {formatPriceCzk(URGENT_SURCHARGE_CZK)}.
+                  </p>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Preferované datum</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Preferované datum (orientační)</label>
                     <input type="date" value={preferredDate} onChange={e => setPreferredDate(e.target.value)}
                       className="w-full bg-[#111] border border-white/10 rounded-lg p-3 text-white focus:border-brand-yellow outline-none transition-all" />
+                    <p className="text-xs text-gray-600 mt-1.5">Platí pro obě varianty; u urgentní jde o první možný termín v co nejkratší době.</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Naléhavost</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Typ termínu</label>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <button type="button" onClick={() => setUrgency('normal')}
                         className={cn("p-4 rounded-lg border text-left transition-all",
                           urgency === 'normal' ? "border-brand-yellow bg-brand-yellow/10" : "border-white/10 hover:border-white/20"
                         )}>
                         <p className={cn("font-medium text-sm", urgency === 'normal' ? "text-brand-yellow" : "text-white")}>Standardní</p>
-                        <p className="text-xs text-gray-500 mt-1">Termín dle domluvy s technikem</p>
+                        <p className="text-xs text-gray-500 mt-1">Preferované datum + domluva s technikem na konkrétní čas</p>
                       </button>
                       <button type="button" onClick={() => setUrgency('urgent')}
                         className={cn("p-4 rounded-lg border text-left transition-all",
                           urgency === 'urgent' ? "border-red-500 bg-red-500/10" : "border-white/10 hover:border-white/20"
                         )}>
                         <p className={cn("font-medium text-sm", urgency === 'urgent' ? "text-red-400" : "text-white")}>Urgentní</p>
-                        <p className="text-xs text-gray-500 mt-1">Co nejdříve, může být příplatek</p>
+                        <p className="text-xs text-gray-500 mt-1">+ {formatPriceCzk(URGENT_SURCHARGE_CZK)} k základní ceně revize</p>
                       </button>
                     </div>
                   </div>
@@ -397,8 +409,16 @@ export default function NewOrderPage() {
                   floor ? { label: 'Podlaží', value: floor } : null,
                   area ? { label: 'Plocha', value: `${area} m²` } : null,
                   { label: 'Kontaktní osoba', value: `${contactName}, ${contactPhone}` },
-                  { label: serviceType === 'vlastni_revize' ? 'Platnost do' : 'Preferovaný termín', value: preferredDate ? new Date(preferredDate).toLocaleDateString('cs-CZ') : 'Dle domluvy' },
-                  urgency === 'urgent' ? { label: 'Naléhavost', value: '🔴 URGENTNÍ' } : null,
+                  { label: serviceType === 'vlastni_revize' ? 'Platnost do' : 'Preferovaný termín (orientační)', value: preferredDate ? new Date(preferredDate).toLocaleDateString('cs-CZ') : 'Dle domluvy' },
+                  serviceType !== 'vlastni_revize'
+                    ? {
+                        label: 'Typ termínu',
+                        value:
+                          urgency === 'urgent'
+                            ? `Urgentní (+ ${formatPriceCzk(URGENT_SURCHARGE_CZK)} k základu)`
+                            : 'Standardní (technik termín potvrdí nebo domluví jiný)',
+                      }
+                    : null,
                   isFirstRevision ? { label: 'Typ revize', value: 'Výchozí (první) revize' } : null,
                 ].filter(Boolean).map((item, i) => (
                   <div key={i} className="flex flex-col gap-1 border-b border-white/5 py-2 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -407,9 +427,21 @@ export default function NewOrderPage() {
                   </div>
                 ))}
                 {serviceType !== 'vlastni_revize' && (
-                  <div className="flex justify-between py-2 pt-4 border-t border-brand-yellow/20">
-                    <span className="text-gray-400 font-medium">Odhadovaná cena</span>
-                    <span className="font-bold text-brand-yellow text-lg">{selectedService?.price || 'Individuální'}</span>
+                  <div className="space-y-2 border-t border-brand-yellow/20 pt-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Základní cena (dle typu revize)</span>
+                      <span className="text-gray-300">{formatPriceCzk(basePriceOnly)}</span>
+                    </div>
+                    {urgency === 'urgent' && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Urgentní příplatek</span>
+                        <span className="text-red-400/90">+ {formatPriceCzk(URGENT_SURCHARGE_CZK)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1">
+                      <span className="font-medium text-gray-300">Odhad celkem</span>
+                      <span className="font-bold text-brand-yellow text-lg">{formatPriceCzk(estimatedPrice)}</span>
+                    </div>
                   </div>
                 )}
                 {notes && (

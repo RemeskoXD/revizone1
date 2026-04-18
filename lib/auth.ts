@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { getNextAuthJwtSecret } from "./jwt-secret";
+import { isRevisionAuthExpired } from "./revision-auth-core";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -40,6 +41,7 @@ export const authOptions: NextAuthOptions = {
               password: true,
               role: true,
               isDeleted: true,
+              accountStatus: true,
             },
           });
         } catch {
@@ -51,6 +53,7 @@ export const authOptions: NextAuthOptions = {
               name: true,
               password: true,
               role: true,
+              isDeleted: true,
             },
           });
         }
@@ -70,8 +73,43 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Nesprávné heslo");
         }
 
+        const acc = (user as { accountStatus?: string }).accountStatus;
+        if (acc === "PENDING_APPROVAL") {
+          throw new Error(
+            "Účet čeká na schválení oprávnění administrátorem. Po schválení vám přijde e-mail."
+          );
+        }
+        if (acc === "REJECTED") {
+          throw new Error("Registrace nebyla schválena. Pro více informací kontaktujte podporu.");
+        }
+
         if (user.role === 'PENDING_SUPPORT' || user.role === 'PENDING_CONTRACTOR') {
           throw new Error("Váš účet čeká na schválení administrátorem");
+        }
+
+        try {
+          const statusRow = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { bannedAt: true, revisionAuthValidUntil: true, role: true },
+          });
+          if (statusRow?.bannedAt) {
+            throw new Error("Účet byl zablokován. Kontaktujte podporu.");
+          }
+          if (
+            statusRow &&
+            isRevisionAuthExpired(statusRow.role, statusRow.revisionAuthValidUntil)
+          ) {
+            throw new Error(
+              "Platnost oprávnění k revizím vypršela. Kontaktujte administrátora."
+            );
+          }
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            (e.message.includes("zablokován") || e.message.includes("vypršela"))
+          ) {
+            throw e;
+          }
         }
 
         return {
@@ -95,9 +133,40 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+      const sub = token.sub ?? token.id;
+      if (session.user && typeof sub === "string") {
+        try {
+          const row = await prisma.user.findUnique({
+            where: { id: sub },
+            select: {
+              id: true,
+              role: true,
+              name: true,
+              email: true,
+              bannedAt: true,
+              revisionAuthValidUntil: true,
+            },
+          });
+          if (!row || row.bannedAt) {
+            session.user.id = (row?.id ?? sub) as string;
+            session.user.role = (row?.role ?? token.role) as string;
+            session.user.blocked = true;
+            return session;
+          }
+          session.user.id = row.id;
+          session.user.role = row.role;
+          session.user.name = row.name;
+          session.user.email = row.email ?? "";
+          session.user.blocked = false;
+          if (isRevisionAuthExpired(row.role, row.revisionAuthValidUntil)) {
+            session.user.revisionAuthExpired = true;
+            return session;
+          }
+          session.user.revisionAuthExpired = false;
+        } catch {
+          session.user.id = token.id as string;
+          session.user.role = token.role as string;
+        }
       }
       return session;
     }

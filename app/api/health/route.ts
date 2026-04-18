@@ -75,11 +75,11 @@ export async function GET(req: Request) {
   const tableChecks: { table: string; requiredColumns: string[] }[] = [
     {
       table: 'User',
-      requiredColumns: ['id', 'name', 'email', 'emailVerified', 'password', 'phone', 'role', 'isDeleted', 'priority', 'emailNotifications', 'companyId', 'inviteCode', 'commissionRate', 'createdAt', 'updatedAt'],
+      requiredColumns: ['id', 'name', 'email', 'emailVerified', 'password', 'phone', 'role', 'bannedAt', 'isDeleted', 'priority', 'emailNotifications', 'accountStatus', 'ico', 'address', 'licenseDocument', 'licenseMimeType', 'expectedTechnicians', 'pendingCompanyInviteCode', 'stripeCustomerId', 'lastStripePaymentAt', 'licenseValidUntil', 'revisionAuthValidUntil', 'companyId', 'inviteCode', 'commissionRate', 'createdAt', 'updatedAt'],
     },
     {
       table: 'Order',
-      requiredColumns: ['id', 'readableId', 'isDeleted', 'customerId', 'technicianId', 'companyId', 'propertyId', 'revisionCategoryId', 'serviceType', 'propertyType', 'address', 'notes', 'status', 'assignedAt', 'isPublic', 'reportFile', 'price', 'preferredDate', 'scheduledDate', 'scheduledNote', 'confirmedAddress', 'revisionResult', 'revisionNotes', 'nextRevisionDate', 'completedAt', 'cancelToken', 'lastExpiryEmailDays', 'createdAt', 'updatedAt'],
+      requiredColumns: ['id', 'readableId', 'isDeleted', 'customerId', 'technicianId', 'companyId', 'propertyId', 'revisionCategoryId', 'serviceType', 'propertyType', 'address', 'notes', 'status', 'assignedAt', 'isPublic', 'reportFile', 'price', 'isUrgent', 'preferredDate', 'scheduledDate', 'scheduledNote', 'confirmedAddress', 'revisionResult', 'revisionNotes', 'nextRevisionDate', 'completedAt', 'cancelToken', 'lastExpiryEmailDays', 'createdAt', 'updatedAt'],
     },
     {
       table: 'RoleRequest',
@@ -140,6 +140,10 @@ export async function GET(req: Request) {
     {
       table: 'EmailLog',
       requiredColumns: ['id', 'to', 'subject', 'type', 'status', 'messageId', 'error', 'orderId', 'userId', 'createdAt'],
+    },
+    {
+      table: 'StripeWebhookEvent',
+      requiredColumns: ['id', 'createdAt'],
     },
   ];
 

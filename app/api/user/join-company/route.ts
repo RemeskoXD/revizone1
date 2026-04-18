@@ -30,8 +30,8 @@ export async function POST(req: Request) {
 
     const company = await prisma.user.findFirst({
       where: {
-        id: companyCode,
         role: 'COMPANY_ADMIN',
+        OR: [{ inviteCode: companyCode }, { id: companyCode }],
       },
     });
 

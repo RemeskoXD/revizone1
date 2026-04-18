@@ -13,7 +13,9 @@ function LoginForm() {
   const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
   const callbackUrl = rawCallback.startsWith("/api") ? "/dashboard" : rawCallback;
   const message = searchParams.get("message");
-  
+  const blockedRedirect = searchParams.get("error") === "blocked";
+  const revisionAuthRedirect = searchParams.get("error") === "revision_auth";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -65,6 +67,18 @@ function LoginForm() {
         {message && (
           <div className="bg-green-500/10 border border-green-500/20 text-green-500 text-sm p-3 rounded-lg mb-6 text-center">
             {message}
+          </div>
+        )}
+
+        {blockedRedirect && (
+          <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-center text-sm text-amber-200">
+            Účet byl zablokován nebo relace ukončena. Pro návrat kontaktujte podporu.
+          </div>
+        )}
+
+        {revisionAuthRedirect && (
+          <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-sm text-red-200">
+            Platnost oprávnění k provádění revizí vypršela. Obnovte ji u administrátora Revizone.
           </div>
         )}
 

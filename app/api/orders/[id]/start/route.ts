@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendOrderStatusEmail } from '@/lib/notifications';
+import { assertRevisionAuthValid } from '@/lib/revision-auth';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,6 +12,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session || !['TECHNICIAN', 'COMPANY_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const authDenied = await assertRevisionAuthValid(session.user.id);
+    if (authDenied) return authDenied;
 
     const { id } = await params;
     

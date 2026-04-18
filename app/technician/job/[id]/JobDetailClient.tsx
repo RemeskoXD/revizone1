@@ -245,12 +245,19 @@ export default function JobDetailClient({ order, currentUser, addressHistory = [
                   )}
                 </div>
 
+                {order.isUrgent && (
+                  <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">
+                    Urgentní objednávka – prioritní zařazení (cena zahrnuje příplatek).
+                  </div>
+                )}
+
                 {order.preferredDate && (
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-gray-600 shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-500">Přání zákazníka</p>
+                      <p className="text-xs text-gray-500">Preferovaný termín (orientační)</p>
                       <p className="text-sm text-gray-400">{new Date(order.preferredDate).toLocaleDateString('cs-CZ')}</p>
+                      <p className="text-[11px] text-gray-600 mt-0.5">Můžete potvrdit nebo navrhnout jiný termín po domluvě.</p>
                     </div>
                   </div>
                 )}

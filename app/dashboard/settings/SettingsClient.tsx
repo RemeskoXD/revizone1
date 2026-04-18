@@ -1,33 +1,94 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User as UserIcon, Lock, Bell, Save, Briefcase, Building, UserX, X } from 'lucide-react';
+import { User as UserIcon, Lock, Bell, Save, UserX, X, ShieldCheck, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from '@prisma/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
+import { isRevisionAuthExpired, isRevisionAuthRole } from '@/lib/revision-auth-core';
 
-export default function SettingsClient({ user }: { user: User }) {
+const DISABLED_TABS = new Set(['security', 'notifications']);
+
+export default function SettingsClient({
+  user,
+  stripeConfigured,
+}: {
+  user: User;
+  /** true pokud jsou nastavené STRIPE_SECRET_KEY + STRIPE_PRICE_ID */
+  stripeConfigured: boolean;
+}) {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
-  const [roleRequest, setRoleRequest] = useState('');
-  const [companyCode, setCompanyCode] = useState('');
+  const [stripeLoading, setStripeLoading] = useState<'checkout' | 'portal' | null>(null);
   
   const [firstName, setFirstName] = useState(user.name?.split(' ')[0] || '');
   const [lastName, setLastName] = useState(user.name?.split(' ').slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user.phone || '');
   const [emailNotifs, setEmailNotifs] = useState((user as any).emailNotifications !== false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteNote, setDeleteNote] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const router = useRouter();
+  const pathname = usePathname() || '/dashboard/settings';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('tab') === 'billing') setActiveTab('billing');
+    const st = q.get('stripe');
+    if (st === 'success') {
+      alert(
+        'Platba proběhla. Platnost licence se doplní z webhooku během několika vteřin – obnovte stránku, pokud se datum nezmění.'
+      );
+      router.replace(`${pathname}?tab=billing`);
+      router.refresh();
+    } else if (st === 'cancel') {
+      alert('Platba byla zrušena.');
+      router.replace(`${pathname}?tab=billing`);
+    }
+  }, [router, pathname]);
+
+  const startCheckout = async () => {
+    setStripeLoading('checkout');
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnPath: pathname }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url as string;
+        return;
+      }
+      alert((data as { message?: string }).message || 'Nepodařilo se otevřít platbu.');
+    } finally {
+      setStripeLoading(null);
+    }
+  };
+
+  const openPortal = async () => {
+    setStripeLoading('portal');
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnPath: pathname }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url as string;
+        return;
+      }
+      alert((data as { message?: string }).message || 'Portál se nepodařilo otevřít.');
+    } finally {
+      setStripeLoading(null);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,60 +110,6 @@ export default function SettingsClient({ user }: { user: User }) {
     } catch (error) {
       console.error(error);
       alert('Došlo k chybě při ukládání změn.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRoleRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!roleRequest) return;
-    setIsLoading(true);
-    
-    try {
-      const res = await fetch('/api/user/role-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestedRole: roleRequest }),
-      });
-      
-      if (res.ok) {
-        alert('Žádost o změnu role byla odeslána ke schválení.');
-        setRoleRequest('');
-      } else {
-        alert('Došlo k chybě při odesílání žádosti.');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Došlo k chybě při odesílání žádosti.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleJoinCompany = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!companyCode) return;
-    setIsLoading(true);
-    
-    try {
-      const res = await fetch('/api/user/join-company', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyCode }),
-      });
-      
-      if (res.ok) {
-        alert('Úspěšně jste se připojili k firmě.');
-        setCompanyCode('');
-        router.refresh();
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Došlo k chybě při připojování k firmě.');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Došlo k chybě při připojování k firmě.');
     } finally {
       setIsLoading(false);
     }
@@ -163,184 +170,104 @@ export default function SettingsClient({ user }: { user: User }) {
         <p className="text-gray-400">Spravujte své osobní údaje a preference.</p>
       </div>
 
+      {isRevisionAuthRole(user.role) && (
+        <div
+          className={`rounded-xl border p-4 sm:p-5 ${
+            user.revisionAuthValidUntil == null
+              ? 'border-amber-500/30 bg-amber-500/5'
+              : isRevisionAuthExpired(user.role, user.revisionAuthValidUntil)
+                ? 'border-red-500/40 bg-red-500/10'
+                : 'border-emerald-500/25 bg-emerald-500/5'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {user.revisionAuthValidUntil != null && isRevisionAuthExpired(user.role, user.revisionAuthValidUntil) ? (
+              <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
+            ) : (
+              <ShieldCheck className="h-5 w-5 shrink-0 text-brand-yellow" />
+            )}
+            <div>
+              <h2 className="font-semibold text-white">Oprávnění k provádění revizí</h2>
+              {user.revisionAuthValidUntil == null ? (
+                <p className="mt-1 text-sm text-amber-200/90">
+                  Platnost oprávnění zatím není v systému nastavena. Kontaktujte administrátora Revizone.
+                </p>
+              ) : isRevisionAuthExpired(user.role, user.revisionAuthValidUntil) ? (
+                <p className="mt-1 text-sm text-red-200">
+                  Platnost vypršela{' '}
+                  {new Date(user.revisionAuthValidUntil).toLocaleDateString('cs-CZ')}. Obnovte oprávnění u administrátora.
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-gray-300">
+                  Platné do{' '}
+                  <span className="font-medium text-emerald-300">
+                    {new Date(user.revisionAuthValidUntil).toLocaleDateString('cs-CZ')}
+                  </span>{' '}
+                  (včetně uvedeného dne).
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8">
         {/* Settings Navigation */}
         <div className="w-full md:w-64 flex-shrink-0 space-y-1">
           {[
             { id: 'profile', label: 'Osobní údaje', icon: UserIcon },
+            { id: 'billing', label: 'Platby / licence', icon: CreditCard },
             { id: 'security', label: 'Zabezpečení', icon: Lock },
             { id: 'notifications', label: 'Upozornění', icon: Bell },
-            ...(user.role === 'CUSTOMER' ? [{ id: 'role', label: 'Změna role', icon: Briefcase }] : []),
-            ...(user.role === 'TECHNICIAN' ? [{ id: 'company', label: 'Připojit k firmě', icon: Building }] : []),
-            ...(user.role === 'COMPANY_ADMIN' ? [{ id: 'company_settings', label: 'Nastavení firmy', icon: Building }] : []),
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                activeTab === item.id 
-                  ? "bg-brand-yellow text-black" 
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </button>
-          ))}
+          ].map((item) => {
+            const disabled = DISABLED_TABS.has(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  if (!disabled) setActiveTab(item.id);
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors text-left',
+                  disabled
+                    ? 'cursor-not-allowed opacity-40 text-gray-500'
+                    : activeTab === item.id
+                      ? 'bg-brand-yellow text-black'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                )}
+                title={disabled ? 'Sekce bude brzy k dispozici' : undefined}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                <span className="flex-1">{item.label}</span>
+                {disabled && <span className="text-[10px] uppercase tracking-wide text-gray-600">brzy</span>}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content Area */}
         <div className="flex-1 bg-[#1A1A1A] border border-white/5 rounded-xl p-6 md:p-8 overflow-hidden relative min-h-[400px]">
           <AnimatePresence mode="wait">
-            {activeTab === 'role' && user.role === 'CUSTOMER' ? (
-              <motion.div 
-                key="role"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
-                <h3 className="text-lg font-medium text-white mb-4">Žádost o změnu role</h3>
-                <p className="text-sm text-gray-400 mb-6">
-                  Zde můžete zažádat o změnu vaší uživatelské role. Každá žádost podléhá schválení administrátorem.
-                </p>
-                
-                <form onSubmit={handleRoleRequest} className="space-y-4 max-w-md">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-400">Požadovaná role</label>
-                    <select 
-                      value={roleRequest}
-                      onChange={(e) => setRoleRequest(e.target.value)}
-                      className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none"
-                      required
-                    >
-                      <option value="">Vyberte roli...</option>
-                      <option value="TECHNICIAN">Technik</option>
-                      <option value="COMPANY_ADMIN">Firma</option>
-                      <option value="PRODUCT_MANAGER">Produkt Manager (Realitní makléř)</option>
-                      <option value="REALTY">Produkt Manager (Realitní makléř)</option>
-                      <option value="SVJ">Správce SVJ</option>
-                    </select>
-                  </div>
-                  
-                  <button 
-                    type="submit" 
-                    disabled={isLoading || !roleRequest}
-                    className="w-full py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50"
-                  >
-                    {isLoading ? 'Odesílám...' : 'Odeslat žádost'}
-                  </button>
-                </form>
-              </motion.div>
-            ) : activeTab === 'company' && user.role === 'TECHNICIAN' ? (
-              <motion.div 
-                key="company"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
-                <h3 className="text-lg font-medium text-white mb-4">Připojit se k firmě</h3>
-                <p className="text-sm text-gray-400 mb-6">
-                  Pokud pracujete pro firmu, která využívá náš systém, zadejte její identifikační kód pro propojení účtů.
-                </p>
-                
-                <form onSubmit={handleJoinCompany} className="space-y-4 max-w-md">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-400">Kód firmy</label>
-                    <input 
-                      type="text" 
-                      value={companyCode}
-                      onChange={(e) => setCompanyCode(e.target.value)}
-                      placeholder="Např. FIRMA-1234"
-                      className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none"
-                      required
-                    />
-                  </div>
-                  
-                  <button 
-                    type="submit" 
-                    disabled={isLoading || !companyCode}
-                    className="w-full py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50"
-                  >
-                    {isLoading ? 'Odesílám...' : 'Odeslat žádost'}
-                  </button>
-                </form>
-              </motion.div>
-            ) : activeTab === 'company_settings' && user.role === 'COMPANY_ADMIN' ? (
-              <motion.div 
-                key="company_settings"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
-                <h3 className="text-lg font-medium text-white mb-4">Nastavení firmy</h3>
-                <p className="text-sm text-gray-400 mb-6">
-                  Zde můžete spravovat identifikační kód vaší firmy. Technici tento kód potřebují, aby se mohli připojit k vaší firmě.
-                </p>
-                
-                <div className="space-y-4 max-w-md">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-400">Kód firmy (Invite Code)</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={(user as any).inviteCode || 'Nenastaveno'}
-                        readOnly
-                        className="flex-1 bg-[#111] border border-white/10 rounded-lg p-2.5 text-white outline-none font-mono"
-                      />
-                      <button 
-                        type="button"
-                        onClick={async () => {
-                          if (!confirm('Opravdu chcete vygenerovat nový kód? Starý kód přestane fungovat.')) return;
-                          setIsLoading(true);
-                          try {
-                            const res = await fetch('/api/company/settings/generate-code', { method: 'POST' });
-                            if (res.ok) {
-                              alert('Nový kód byl úspěšně vygenerován.');
-                              router.refresh();
-                            } else {
-                              alert('Došlo k chybě při generování kódu.');
-                            }
-                          } catch (e) {
-                            alert('Došlo k chybě při generování kódu.');
-                          } finally {
-                            setIsLoading(false);
-                          }
-                        }}
-                        disabled={isLoading}
-                        className="px-4 py-2.5 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
-                      >
-                        Vygenerovat nový
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
+              {activeTab === 'profile' && (
               <motion.form 
-                key="settings-form"
+                key="settings-form-profile"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
                 onSubmit={handleSave}
               >
-              
               {/* Profile Tab */}
-              {activeTab === 'profile' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="flex items-center gap-4 mb-6">
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="flex items-center gap-4 mb-6 opacity-40 pointer-events-none select-none">
                       <div className="w-20 h-20 rounded-full bg-[#111] border border-white/10 flex items-center justify-center">
                           <UserIcon className="w-8 h-8 text-gray-400" />
                       </div>
                       <div>
                           <p className="text-sm text-gray-500">Profilová fotka</p>
+                          <p className="text-xs text-gray-600 mt-1">Již brzy</p>
                       </div>
                   </div>
 
@@ -383,9 +310,9 @@ export default function SettingsClient({ user }: { user: User }) {
                       </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 opacity-40 pointer-events-none select-none">
                       <label className="text-sm font-medium text-gray-400">Fakturační adresa</label>
-                      <input type="text" defaultValue="" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
+                      <input type="text" defaultValue="" disabled placeholder="Již brzy" className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-gray-500 cursor-not-allowed outline-none" />
                   </div>
 
                   <div className="pt-4 border-t border-white/10">
@@ -406,6 +333,66 @@ export default function SettingsClient({ user }: { user: User }) {
                         <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
                       </div>
                     </label>
+                  </div>
+
+                  <div className="pt-4 border-t border-emerald-500/25">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-emerald-400" />
+                      Spravovat své předplatné
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Faktury, platební metodu a předplatné (změna, zrušení) spravuje přímo{' '}
+                      <strong className="text-gray-400">Stripe</strong> na jejich obecné stránce pro zákazníky (Billing
+                      Portal) – stejná, jakou používají tisíce e‑shopů.
+                    </p>
+                    {!stripeConfigured ? (
+                      <p className="text-xs text-amber-200/85">
+                        Online platby nejsou na tomto prostředí aktivní. Po nasazení Stripe zde bude odkaz do portálu.
+                      </p>
+                    ) : user.stripeCustomerId ? (
+                      <button
+                        type="button"
+                        onClick={openPortal}
+                        disabled={stripeLoading !== null}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-100 hover:bg-emerald-500/15 disabled:opacity-50"
+                      >
+                        {stripeLoading === 'portal' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CreditCard className="h-4 w-4" />
+                        )}
+                        Otevřít správu předplatného ve Stripe
+                      </button>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-xs text-gray-500">
+                          Po dokončení první platby přes Revizone se zde objeví tlačítko do Stripe portálu. Mezitím můžete
+                          předplatné založit v sekci Platby / licence.
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                          <button
+                            type="button"
+                            onClick={startCheckout}
+                            disabled={stripeLoading !== null}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-yellow px-4 py-2.5 text-sm font-semibold text-black hover:bg-brand-yellow-hover disabled:opacity-50"
+                          >
+                            {stripeLoading === 'checkout' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <CreditCard className="h-4 w-4" />
+                            )}
+                            Zahájit předplatné
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('billing')}
+                            className="inline-flex items-center justify-center rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-200 hover:bg-white/5"
+                          >
+                            Platby / licence…
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-4 border-t border-red-500/20">
@@ -429,101 +416,6 @@ export default function SettingsClient({ user }: { user: User }) {
                       Požádat o smazání účtu
                     </button>
                   </div>
-                </div>
-              )}
-
-              {/* Security Tab */}
-              {activeTab === 'security' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <h3 className="text-lg font-medium text-white mb-4">Změna hesla</h3>
-                  {passwordMessage && (
-                    <div className={cn(
-                      "p-3 rounded-lg text-sm",
-                      passwordMessage.type === 'success' ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-                    )}>
-                      {passwordMessage.text}
-                    </div>
-                  )}
-                  <div className="space-y-4 max-w-md">
-                      <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-400">Současné heslo</label>
-                          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
-                      </div>
-                      <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-400">Nové heslo</label>
-                          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
-                      </div>
-                      <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-400">Potvrzení nového hesla</label>
-                          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg p-2.5 text-white focus:border-brand-yellow outline-none" />
-                      </div>
-                      <button
-                        type="button"
-                        disabled={isLoading || !currentPassword || !newPassword || !confirmPassword}
-                        onClick={async () => {
-                          if (newPassword !== confirmPassword) {
-                            setPasswordMessage({ type: 'error', text: 'Nová hesla se neshodují.' });
-                            return;
-                          }
-                          if (newPassword.length < 10) {
-                            setPasswordMessage({ type: 'error', text: 'Nové heslo musí mít alespoň 10 znaků.' });
-                            return;
-                          }
-                          setIsLoading(true);
-                          setPasswordMessage(null);
-                          try {
-                            const res = await fetch('/api/user/password', {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ currentPassword, newPassword }),
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                              setPasswordMessage({ type: 'success', text: 'Heslo bylo úspěšně změněno.' });
-                              setCurrentPassword('');
-                              setNewPassword('');
-                              setConfirmPassword('');
-                            } else {
-                              setPasswordMessage({ type: 'error', text: data.message || 'Došlo k chybě.' });
-                            }
-                          } catch {
-                            setPasswordMessage({ type: 'error', text: 'Došlo k chybě při změně hesla.' });
-                          } finally {
-                            setIsLoading(false);
-                          }
-                        }}
-                        className="w-full py-2.5 bg-brand-yellow text-black font-semibold rounded-lg hover:bg-brand-yellow-hover transition-colors disabled:opacity-50"
-                      >
-                        {isLoading ? 'Měním heslo...' : 'Změnit heslo'}
-                      </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Notifications Tab */}
-              {activeTab === 'notifications' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="space-y-4">
-                      {[
-                          { title: 'Blížící se termín revize', desc: 'Upozornit mě 30 dní před vypršením platnosti.', default: true },
-                          { title: 'Změna stavu objednávky', desc: 'Když technik potvrdí termín nebo dokončí revizi.', default: true },
-                          { title: 'Nová zpráva', desc: 'Upozornění na novou zprávu od technika.', default: true },
-                          { title: 'Marketingové nabídky', desc: 'Novinky a speciální akce (maximálně 1x měsíčně).', default: false },
-                      ].map((item, i) => (
-                          <div key={i} className="flex items-start justify-between p-4 bg-[#111] rounded-lg border border-white/10">
-                              <div>
-                                  <p className="text-white font-medium">{item.title}</p>
-                                  <p className="text-sm text-gray-500">{item.desc}</p>
-                              </div>
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                  <input type="checkbox" defaultChecked={item.default} className="sr-only peer" />
-                                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-yellow"></div>
-                              </label>
-                          </div>
-                      ))}
-                  </div>
-                </div>
-              )}
 
               {/* Save Button */}
               <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
@@ -540,9 +432,80 @@ export default function SettingsClient({ user }: { user: User }) {
                       <span>Uložit změny</span>
                   </button>
               </div>
-
+              </div>
             </motion.form>
-          )}
+              )}
+
+              {activeTab === 'billing' && (
+                <motion.div
+                  key="settings-billing"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
+                >
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Platby a licence Revizone</h2>
+                    <p className="mt-1 text-sm text-gray-400">
+                      Předplatné přes Stripe. Po úspěšné platbě se platnost licence doplní automaticky (webhook).
+                    </p>
+                  </div>
+
+                  {!stripeConfigured ? (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-100">
+                      Online platby nejsou na tomto prostředí nastavené. Po nasazení doplňte proměnné{' '}
+                      <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">STRIPE_SECRET_KEY</code> a{' '}
+                      <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">STRIPE_PRICE_ID</code>
+                      (a webhook <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">STRIPE_WEBHOOK_SECRET</code>).
+                    </div>
+                  ) : (
+                    <>
+                      <div className="rounded-lg border border-white/10 bg-[#111] p-4 space-y-2">
+                        <p className="text-sm text-gray-400">Stav licence (aplikační)</p>
+                        <p className="text-white font-medium">
+                          {user.licenseValidUntil
+                            ? `Platné do ${new Date(user.licenseValidUntil).toLocaleString('cs-CZ')}`
+                            : 'Zatím bez aktivní licence z předplatného'}
+                        </p>
+                        {user.lastStripePaymentAt && (
+                          <p className="text-xs text-gray-500">
+                            Poslední záznam platby: {new Date(user.lastStripePaymentAt).toLocaleString('cs-CZ')}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                          type="button"
+                          onClick={startCheckout}
+                          disabled={stripeLoading !== null}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-yellow px-5 py-2.5 text-sm font-semibold text-black hover:bg-brand-yellow-hover disabled:opacity-50"
+                        >
+                          {stripeLoading === 'checkout' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CreditCard className="h-4 w-4" />
+                          )}
+                          Předplatit / změnit plán
+                        </button>
+                        <button
+                          type="button"
+                          onClick={openPortal}
+                          disabled={stripeLoading !== null || !user.stripeCustomerId}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/5 disabled:opacity-40"
+                          title={!user.stripeCustomerId ? 'Nejdřív dokončete první platbu přes Stripe.' : undefined}
+                        >
+                          {stripeLoading === 'portal' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          Faktury a platební metoda (Stripe)
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
           </AnimatePresence>
         </div>
       </div>

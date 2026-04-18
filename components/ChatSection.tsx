@@ -4,11 +4,21 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const NEAR_BOTTOM_PX = 80;
+
 export function ChatSection({ orderId, currentUserId }: { orderId: string, currentUserId: string }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  const updateNearBottom = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    isNearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -18,12 +28,24 @@ export function ChatSection({ orderId, currentUserId }: { orderId: string, curre
   }, [orderId]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateNearBottom, { passive: true });
+    return () => el.removeEventListener('scroll', updateNearBottom);
+  }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const last = messages[messages.length - 1];
+    const lastFromMe = last?.senderId === currentUserId;
+    if (lastFromMe || isNearBottomRef.current) {
+      requestAnimationFrame(() => {
+        const box = scrollContainerRef.current;
+        if (box) box.scrollTop = box.scrollHeight;
+      });
+    }
+  }, [messages, currentUserId]);
 
   const fetchMessages = async () => {
     try {
@@ -87,7 +109,7 @@ export function ChatSection({ orderId, currentUserId }: { orderId: string, curre
         <h3 className="text-sm font-semibold text-white">Komunikace k zakázce</h3>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 text-sm mt-10">
             Zatím žádné zprávy. Napište první zprávu.
@@ -114,7 +136,6 @@ export function ChatSection({ orderId, currentUserId }: { orderId: string, curre
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <form onSubmit={sendMessage} className="p-3 border-t border-white/5 bg-[#111] flex gap-2">

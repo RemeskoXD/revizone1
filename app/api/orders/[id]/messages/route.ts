@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { readJsonBody, PayloadTooLargeError } from '@/lib/json-body';
 import { rateLimit } from '@/lib/rate-limit';
+import { notifyOrderChatMessage } from '@/lib/notifications';
 
 const MAX_CONTENT = 8000;
 
@@ -99,6 +100,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         },
       },
     });
+
+    const senderRole = session.user.role;
+    const isFromCustomer = order.customerId === session.user.id;
+    if (isFromCustomer && order.technicianId) {
+      await notifyOrderChatMessage({
+        recipientId: order.technicianId,
+        orderReadableId: order.readableId,
+        senderRole,
+        isFromCustomer: true,
+        content,
+      });
+    } else if (!isFromCustomer) {
+      await notifyOrderChatMessage({
+        recipientId: order.customerId,
+        orderReadableId: order.readableId,
+        senderRole,
+        isFromCustomer: false,
+        content,
+      });
+    }
+
     return NextResponse.json(message);
   } catch (error) {
     if (error instanceof PayloadTooLargeError) {

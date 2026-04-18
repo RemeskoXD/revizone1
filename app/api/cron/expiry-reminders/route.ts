@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { expiryWarningEmail, expiryExpiredEmail } from '@/lib/email-templates';
+import { notifyRevisionExpired, notifyRevisionExpiryWarning } from '@/lib/notifications';
 
 const REMINDER_DAYS = [30, 14, 7, 2, 1];
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -46,6 +47,7 @@ export async function GET(req: Request) {
 
     const now = new Date();
     let emailsSent = 0;
+    let notificationsSent = 0;
     let errorsCount = 0;
 
     for (const order of completedOrders) {
@@ -85,6 +87,19 @@ export async function GET(req: Request) {
             data: { lastExpiryEmailDays: shouldSendDay },
           });
           emailsSent++;
+          try {
+            await notifyRevisionExpiryWarning({
+              userId: recipient.id,
+              orderReadableId: order.readableId,
+              serviceType: order.serviceType,
+              address: order.address,
+              daysLeft,
+            });
+            notificationsSent++;
+          } catch (e) {
+            console.error(`Failed to create expiry notification for order ${order.readableId}:`, e);
+            errorsCount++;
+          }
         } catch (e) {
           console.error(`Failed to send expiry warning for order ${order.readableId}:`, e);
           errorsCount++;
@@ -110,6 +125,19 @@ export async function GET(req: Request) {
             data: { lastExpiryEmailDays: expiredDaysAgo === 0 ? 0 : -1 },
           });
           emailsSent++;
+          try {
+            await notifyRevisionExpired({
+              userId: recipient.id,
+              orderReadableId: order.readableId,
+              serviceType: order.serviceType,
+              address: order.address,
+              expiredDaysAgo: Math.max(expiredDaysAgo, 1),
+            });
+            notificationsSent++;
+          } catch (e) {
+            console.error(`Failed to create expired notification for order ${order.readableId}:`, e);
+            errorsCount++;
+          }
         } catch (e) {
           console.error(`Failed to send expired email for order ${order.readableId}:`, e);
           errorsCount++;
@@ -120,6 +148,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       processed: completedOrders.length,
       emailsSent,
+      notificationsSent,
       errors: errorsCount,
       timestamp: now.toISOString(),
     });

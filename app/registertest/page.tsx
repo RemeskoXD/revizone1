@@ -164,6 +164,7 @@ function RegisterForm() {
           role,
           companyId: role === "TECHNICIAN" ? companyId : undefined,
           inviteCode,
+          registrationFlow: "legacy",
         }),
       });
 

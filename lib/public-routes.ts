@@ -16,10 +16,13 @@ export const PUBLIC_ROUTE_PREFIXES = [
   /** Smazání účtu (požadavek Google Play) – veřejný text + přihlášení až ve formuláři */
   '/smazatucet',
   '/api/public',
+  '/api/register',
   '/api/auth',
   '/api/banner',
   '/api/revisions',
   '/api/health',
+  /** Stripe webhook – ověření podpisu STRIPE_WEBHOOK_SECRET */
+  '/api/webhooks/stripe',
 ] as const;
 
 function stripTrailingSlash(pathname: string): string {

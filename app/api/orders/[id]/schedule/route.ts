@@ -3,12 +3,18 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notifyScheduleSet, sendOrderStatusEmail } from '@/lib/notifications';
+import { assertRevisionAuthValid } from '@/lib/revision-auth';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !['TECHNICIAN', 'COMPANY_ADMIN', 'ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (session.user.role === 'TECHNICIAN' || session.user.role === 'COMPANY_ADMIN') {
+      const authDenied = await assertRevisionAuthValid(session.user.id);
+      if (authDenied) return authDenied;
     }
 
     const { id } = await params;

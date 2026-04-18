@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { notifyOrderCompleted, notifyDefectCreated, sendOrderStatusEmail } from '@/lib/notifications';
 import { readJsonBody, PayloadTooLargeError } from '@/lib/json-body';
 import { rateLimit } from '@/lib/rate-limit';
+import { assertRevisionAuthValid } from '@/lib/revision-auth';
 
 const REPORT_BODY_MAX = 8_500_000;
 const RESULTS = new Set(['PASS', 'FAIL', 'PASS_WITH_NOTES']);
@@ -16,6 +17,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session || !['TECHNICIAN', 'COMPANY_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const authDenied = await assertRevisionAuthValid(session.user.id);
+    if (authDenied) return authDenied;
 
     const rl = rateLimit(`order-complete:${session.user.id}`, 35, 60 * 60 * 1000);
     if (!rl.ok) {

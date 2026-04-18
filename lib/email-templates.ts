@@ -38,12 +38,20 @@ export function orderConfirmationEmail(order: {
   address: string;
   price: number | null;
   preferredDate: string | null;
+  isUrgent?: boolean;
   cancelToken: string;
 }) {
   const priceText = order.price ? `${order.price.toLocaleString('cs-CZ')} Kč` : 'Dle ceníku';
   const dateText = order.preferredDate
     ? new Date(order.preferredDate).toLocaleDateString('cs-CZ')
     : 'Dle domluvy';
+  const urgentLine =
+    order.isUrgent === true
+      ? `<tr><td style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px">Termín</span><br>
+        <span style="color:#f87171;font-size:15px;font-weight:600">Urgentní (+ zahrnutý příplatek v ceně)</span>
+      </td></tr>`
+      : '';
 
   const html = layout(`
     <h2 style="color:#fff;font-size:20px;margin:0 0 8px">Objednávka přijata</h2>
@@ -65,7 +73,9 @@ export function orderConfirmationEmail(order: {
       <tr><td style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.05)">
         <span style="color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px">Preferovaný termín</span><br>
         <span style="color:#fff;font-size:15px">${dateText}</span>
+        <span style="color:#888;font-size:12px;display:block;margin-top:6px">Technik termín potvrdí nebo navrhne jiný po domluvě.</span>
       </td></tr>
+      ${urgentLine}
       <tr><td style="padding:16px 20px">
         <span style="color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px">Cena</span><br>
         <span style="color:#facc15;font-size:20px;font-weight:700">${priceText}</span>
@@ -244,5 +254,51 @@ export function orderStatusEmail(data: {
   return {
     subject: `${cfg.emoji} Objednávka #${data.readableId}: ${cfg.label} – Revizone`,
     html,
+  };
+}
+
+export function registrationApprovedEmail(params: {
+  name: string | null;
+  roleLabel: string;
+  /** Platnost oprávnění k provádění revizí (datum včetně). */
+  validUntilLabel: string;
+}) {
+  const loginUrl = `${baseUrl.replace(/\/$/, '')}/login`;
+  const html = layout(`
+    <h2 style="color:#fff;font-size:20px;margin:0 0 8px">Registrace byla schválena</h2>
+    <p style="color:#999;font-size:14px;margin:0 0 16px">Dobrý den${params.name ? `, ${params.name}` : ''},</p>
+    <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 16px">
+      Vaše registrace jako <strong style="color:#fff">${params.roleLabel}</strong> byla administrátorem <strong style="color:#facc15">schválena</strong>.
+      Nyní se můžete přihlásit a používat plně funkce účtu.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#111;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin:0 0 24px">
+      <tr><td style="padding:16px 20px">
+        <span style="color:#999;font-size:12px;text-transform:uppercase;letter-spacing:1px">Platnost oprávnění k revizím do</span><br>
+        <span style="color:#facc15;font-size:18px;font-weight:700">${params.validUntilLabel}</span>
+        <p style="color:#888;font-size:12px;margin:8px 0 0;line-height:1.4">Po tomto datu bude potřeba obnovení u administrátora Revizone.</p>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 8px">${button('Přihlásit se', loginUrl)}</p>
+  `);
+  return {
+    subject: 'Revizone – registrace schválena',
+    html,
+    text: `Registrace jako ${params.roleLabel} byla schválena. Platnost oprávnění k revizím do ${params.validUntilLabel}. Přihlášení: ${loginUrl}`,
+  };
+}
+
+export function registrationRejectedEmail(params: { name: string | null }) {
+  const html = layout(`
+    <h2 style="color:#fff;font-size:20px;margin:0 0 8px">Registrace nebyla schválena</h2>
+    <p style="color:#999;font-size:14px;margin:0 0 16px">Dobrý den${params.name ? `, ${params.name}` : ''},</p>
+    <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 24px">
+      Vaše registrace v systému Revizone bohužel <strong style="color:#f87171">nebyla schválena</strong>.
+      Pro více informací nás můžete kontaktovat na podporu.
+    </p>
+  `);
+  return {
+    subject: 'Revizone – registrace zamítnuta',
+    html,
+    text: 'Vaše registrace nebyla schválena. Pro více informací kontaktujte podporu.',
   };
 }
