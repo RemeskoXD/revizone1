@@ -32,16 +32,16 @@ export const REVISION_RESULT = {
 
 export const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: 'Zákazník',
-  TECHNICIAN: 'Revizní technik',
-  COMPANY_ADMIN: 'Správce firmy',
-  REALTY: 'Realitní kancelář',
+  TECHNICIAN: 'Technik',
+  COMPANY_ADMIN: 'Firma',
+  REALTY: 'Produkt Manager (Realitní makléř)',
   SVJ: 'Správce SVJ',
-  ADMIN: 'Administrátor',
-  SUPPORT: 'Support',
-  CONTRACTOR: 'Dodavatel',
+  ADMIN: 'Admin',
+  SUPPORT: 'Admin',
+  CONTRACTOR: 'Admin',
   PENDING_SUPPORT: 'Čeká na schválení (Support)',
   PENDING_CONTRACTOR: 'Čeká na schválení (Dodavatel)',
-  PRODUCT_MANAGER: 'Produkt manažer',
+  PRODUCT_MANAGER: 'Produkt Manager (Realitní makléř)',
 };
 
 export const STATUS_LABELS: Record<string, string> = {

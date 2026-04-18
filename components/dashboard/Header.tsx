@@ -5,17 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { NotificationBell } from '@/components/NotificationBell';
-
-const ROLE_LABELS: Record<string, string> = {
-  CUSTOMER: 'Zákazník',
-  TECHNICIAN: 'Revizní technik',
-  COMPANY_ADMIN: 'Správce firmy',
-  REALTY: 'Realitní správce',
-  SVJ: 'Správce SVJ',
-  ADMIN: 'Administrátor',
-  SUPPORT: 'Support',
-  CONTRACTOR: 'Dodavatel',
-};
+import { getRoleDisplayName } from '@/lib/role-labels';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -27,7 +17,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const userName = session?.user?.name || 'Uživatel';
-  const userRole = ROLE_LABELS[session?.user?.role || ''] || 'Zákazník';
+  const userRole = getRoleDisplayName(session?.user?.role);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,22 +43,23 @@ export function Header({ onMenuClick }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 shrink-0 border-b border-white/10 bg-[#111111] pt-[env(safe-area-inset-top)]">
       <div className="flex flex-col gap-3 px-3 py-3 sm:px-4 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-0">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:flex-1">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <span className="truncate text-sm font-bold tracking-tight text-white sm:text-base lg:hidden">
+              Revizone
+            </span>
+            <form onSubmit={handleSearch} className="relative hidden min-w-0 max-w-md flex-1 lg:block">
+              {searchInput}
+            </form>
+          </div>
           <button
             type="button"
             onClick={onMenuClick}
-            className="touch-manipulation rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white lg:hidden"
+            className="touch-manipulation shrink-0 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white lg:hidden"
             aria-label="Otevřít menu"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <span className="truncate text-sm font-bold tracking-tight text-white sm:text-base lg:hidden">
-            Revizone
-          </span>
-
-          <form onSubmit={handleSearch} className="relative hidden min-w-0 max-w-md flex-1 lg:block">
-            {searchInput}
-          </form>
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4 lg:shrink-0">

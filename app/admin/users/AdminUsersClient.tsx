@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Search, Shield, User as UserIcon, Mail, Phone, CheckCircle2, MoreHorizontal, Edit2, Plus, X } from 'lucide-react';
 import { User } from '@prisma/client';
 import { motion } from 'motion/react';
+import { getRoleDisplayName } from '@/lib/role-labels';
 
 export default function AdminUsersClient({ initialUsers, userRole }: { initialUsers: User[], userRole: string }) {
   const [users, setUsers] = useState(initialUsers);
@@ -97,16 +98,6 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
     }
   };
 
-  const roleLabels: Record<string, string> = {
-    'ADMIN': 'Administrace',
-    'TECHNICIAN': 'Partner (Podřízený)',
-    'COMPANY_ADMIN': 'Partner (Delegátor)',
-    'PRODUCT_MANAGER': 'Produkt manažer',
-    'REALTY': 'Realitní kancelář',
-    'SVJ': 'Správce SVJ',
-    'CUSTOMER': 'Zákazník',
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -180,12 +171,12 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
                                     className="bg-[#1A1A1A] border border-white/10 rounded px-2 py-1 text-white text-xs"
                                   >
                                     <option value="CUSTOMER">Zákazník</option>
-                                    <option value="TECHNICIAN">Partner (Podřízený)</option>
-                                    <option value="COMPANY_ADMIN">Partner (Delegátor)</option>
-                                    <option value="PRODUCT_MANAGER">Produkt manažer</option>
-                                    <option value="REALTY">Realitní kancelář</option>
+                                    <option value="TECHNICIAN">Technik</option>
+                                    <option value="COMPANY_ADMIN">Firma</option>
+                                    <option value="PRODUCT_MANAGER">Produkt Manager (Realitní makléř)</option>
+                                    <option value="REALTY">Produkt Manager (Realitní makléř)</option>
                                     <option value="SVJ">Správce SVJ</option>
-                                    <option value="ADMIN">Administrace</option>
+                                    <option value="ADMIN">Admin</option>
                                   </select>
                                 ) : (
                                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -196,7 +187,7 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
                                       'bg-gray-500/10 text-gray-500'
                                   }`}>
                                       {user.role === 'TECHNICIAN' && <Shield className="w-3 h-3" />}
-                                      {roleLabels[user.role] || user.role}
+                                      {getRoleDisplayName(user.role)}
                                   </span>
                                 )}
                             </td>
@@ -315,7 +306,17 @@ export default function AdminUsersClient({ initialUsers, userRole }: { initialUs
                   onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                   className="w-full bg-[#1A1A1A] border border-white/10 rounded-lg px-4 py-2 text-white focus:border-brand-yellow/50 outline-none"
                 >
-                  {Object.entries(roleLabels).map(([value, label]) => (
+                  {[
+                    ['CUSTOMER', 'Zákazník'],
+                    ['TECHNICIAN', 'Technik'],
+                    ['COMPANY_ADMIN', 'Firma'],
+                    ['PRODUCT_MANAGER', 'Produkt Manager (Realitní makléř)'],
+                    ['REALTY', 'Produkt Manager (Realitní makléř)'],
+                    ['SVJ', 'Správce SVJ'],
+                    ['ADMIN', 'Admin'],
+                    ['SUPPORT', 'Admin'],
+                    ['CONTRACTOR', 'Admin'],
+                  ].map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>

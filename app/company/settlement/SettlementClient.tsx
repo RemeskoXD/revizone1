@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, TrendingUp, Users, ChevronDown, ChevronUp, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { DollarSign, TrendingUp, Users, ChevronDown, ChevronUp, FileText, Info } from 'lucide-react';
 import { motion } from 'motion/react';
+import { describePlatformFeeRules } from '@/lib/platform-commission';
 
 export default function SettlementClient({ monthlyData, technicians }: any) {
   const [expandedMonth, setExpandedMonth] = useState(0);
@@ -15,6 +15,14 @@ export default function SettlementClient({ monthlyData, technicians }: any) {
       <div>
         <h1 className="text-2xl font-bold text-white">Vyúčtování a provize</h1>
         <p className="text-gray-400 text-sm">Přehled obratu, provizí techniků a zisku firmy za posledních 6 měsíců.</p>
+      </div>
+
+      <div className="flex gap-3 rounded-xl border border-brand-yellow/20 bg-brand-yellow/5 p-4 text-sm text-gray-300">
+        <Info className="h-5 w-5 shrink-0 text-brand-yellow" />
+        <div>
+          <p className="font-medium text-white">Plánované pravidla provize platformy (Stripe)</p>
+          <p className="mt-1 text-xs leading-relaxed text-gray-400">{describePlatformFeeRules()}</p>
+        </div>
       </div>
 
       {/* Current month summary */}

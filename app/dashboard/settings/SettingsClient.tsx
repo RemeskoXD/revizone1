@@ -217,10 +217,10 @@ export default function SettingsClient({ user }: { user: User }) {
                       required
                     >
                       <option value="">Vyberte roli...</option>
-                      <option value="TECHNICIAN">Partner (Podřízený)</option>
-                      <option value="COMPANY_ADMIN">Partner (Delegátor)</option>
-                      <option value="PRODUCT_MANAGER">Produkt manažer</option>
-                      <option value="REALTY">Realitní kancelář</option>
+                      <option value="TECHNICIAN">Technik</option>
+                      <option value="COMPANY_ADMIN">Firma</option>
+                      <option value="PRODUCT_MANAGER">Produkt Manager (Realitní makléř)</option>
+                      <option value="REALTY">Produkt Manager (Realitní makléř)</option>
                       <option value="SVJ">Správce SVJ</option>
                     </select>
                   </div>

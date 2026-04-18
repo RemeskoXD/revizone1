@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, X, Clock } from 'lucide-react';
 import { RoleRequest, User } from '@prisma/client';
 import { motion } from 'motion/react';
+import { getRoleDisplayName } from '@/lib/role-labels';
 
 type RequestWithUser = RoleRequest & { user: User };
 
@@ -32,14 +33,6 @@ export default function RoleRequestsClient({ initialRequests }: { initialRequest
     } finally {
       setIsLoading(null);
     }
-  };
-
-  const roleLabels: Record<string, string> = {
-    'TECHNICIAN': 'Partner (Podřízený)',
-    'COMPANY_ADMIN': 'Partner (Delegátor)',
-    'PRODUCT_MANAGER': 'Produkt manažer',
-    'REALTY': 'Realitní kancelář',
-    'SVJ': 'Správce SVJ',
   };
 
   return (
@@ -76,7 +69,7 @@ export default function RoleRequestsClient({ initialRequests }: { initialRequest
                     <p className="text-xs text-gray-500">{req.user.email}</p>
                   </td>
                   <td className="py-4 text-white">
-                    {roleLabels[req.requestedRole] || req.requestedRole}
+                    {getRoleDisplayName(req.requestedRole)}
                   </td>
                   <td className="py-4 text-gray-500">
                     {new Date(req.createdAt).toLocaleDateString('cs-CZ')}

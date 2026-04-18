@@ -1,9 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, ClipboardList, MessageSquare, User, LogOut, HardHat, DollarSign, Settings, X } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { LayoutDashboard, ClipboardList, MessageSquare, User, DollarSign, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import { useSidebarWidth } from '@/hooks/useSidebarWidth';
+import { RevizoneSidebarBrand } from '@/components/layout/RevizoneSidebarBrand';
+import { SidebarFooterBlock } from '@/components/layout/SidebarFooterBlock';
+import { SidebarResizeHandle } from '@/components/layout/SidebarResizeHandle';
 
 const navigation = [
   { name: 'Přehled', href: '/technician', icon: LayoutDashboard },
@@ -11,7 +15,6 @@ const navigation = [
   { name: 'Výdělky', href: '/technician/earnings', icon: DollarSign },
   { name: 'Zprávy', href: '/technician/messages', icon: MessageSquare },
   { name: 'Profil', href: '/technician/profile', icon: User },
-  { name: 'Nastavení', href: '/dashboard/settings', icon: Settings },
 ];
 
 interface TechnicianSidebarProps {
@@ -20,59 +23,68 @@ interface TechnicianSidebarProps {
 }
 
 export function TechnicianSidebar({ isOpen, onClose }: TechnicianSidebarProps) {
+  const { data: session } = useSession();
+  const { sidebarWidth, isLg, startResize } = useSidebarWidth();
+
   return (
     <>
       <div
         className={cn(
-          "fixed inset-0 bg-black/80 z-40 lg:hidden transition-opacity duration-300",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          'fixed inset-0 z-40 bg-black/80 transition-opacity duration-300 lg:hidden',
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={onClose}
         aria-hidden
       />
 
-      <div className={cn(
-        "flex h-full w-[min(18rem,88vw)] sm:w-64 flex-col bg-[#1A1A1A] border-r border-white/10 z-50",
-        "fixed lg:relative inset-y-0 left-0 transition-transform duration-300 pt-[env(safe-area-inset-top)] lg:pt-0",
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
-        <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 px-4 sm:px-6 border-b border-white/10">
-          <Link href="/technician" className="flex min-w-0 items-center gap-2" onClick={onClose}>
-             <div className="relative flex shrink-0 items-center justify-center w-8 h-8 bg-brand-yellow rounded-md">
-                <HardHat className="w-5 h-5 text-black" />
-             </div>
-             <span className="text-base sm:text-lg font-bold text-white tracking-tight truncate">Revizone</span>
-          </Link>
-          <button type="button" onClick={onClose} className="lg:hidden shrink-0 touch-manipulation rounded-lg p-2 text-gray-400 hover:text-white" aria-label="Zavřít menu">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      <div
+        className="relative z-50 shrink-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
+        style={isLg ? ({ width: sidebarWidth } as React.CSSProperties) : undefined}
+      >
+        <div
+          className={cn(
+            'relative flex h-full w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#1A1A1A] transition-transform duration-300',
+            'fixed inset-y-0 left-0 pt-[env(safe-area-inset-top)] lg:relative lg:w-full lg:max-w-none lg:pt-0',
+            isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          )}
+        >
+          <SidebarResizeHandle onMouseDown={startResize} />
 
-        <div className="flex-1 flex flex-col gap-1 px-3 py-6">
-          <div className="space-y-1">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Menu</p>
+          <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4 sm:px-6">
+            <div className="min-w-0 py-3" onClick={onClose}>
+              <RevizoneSidebarBrand href="/technician" role={session?.user?.role} />
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 touch-manipulation rounded-lg p-2 text-gray-400 hover:text-white lg:hidden"
+              aria-label="Zavřít menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-6">
+            <div className="space-y-1">
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Menu</p>
               {navigation.map((item) => (
-              <Link
+                <Link
                   key={item.name}
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                  "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
-                  "text-gray-400 hover:text-white hover:bg-white/5"
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'text-gray-400 hover:bg-white/5 hover:text-white'
                   )}
-              >
-                  <item.icon className="w-5 h-5 group-hover:text-brand-yellow transition-colors" />
+                >
+                  <item.icon className="h-5 w-5 transition-colors group-hover:text-brand-yellow" />
                   {item.name}
-              </Link>
+                </Link>
               ))}
+            </div>
           </div>
-        </div>
 
-        <div className="p-4 border-t border-white/10">
-          <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-            <LogOut className="w-5 h-5" />
-            Odhlásit se
-          </button>
+          <SidebarFooterBlock settingsHref="/dashboard/settings" />
         </div>
       </div>
     </>

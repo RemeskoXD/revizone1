@@ -46,7 +46,7 @@ const packages: Package[] = [
   {
     id: "technician",
     role: "TECHNICIAN",
-    title: "Revizní technik",
+    title: "Technik",
     icon: <Wrench className="w-7 h-7" />,
     description: "Pro certifikované revizní techniky",
     benefits: [
