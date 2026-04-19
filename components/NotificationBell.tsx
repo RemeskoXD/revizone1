@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { PexesoMemoryGame } from '@/components/PexesoMemoryGame';
 
 interface Notification {
   id: string;
@@ -15,10 +16,16 @@ interface Notification {
   createdAt: string;
 }
 
+const BELL_TAP_WINDOW_MS = 1800;
+const BELL_TAPS_FOR_EASTER_EGG = 6;
+
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pexesoOpen, setPexesoOpen] = useState(false);
+  const bellTapCountRef = useRef(0);
+  const bellTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   const fetchNotifications = async () => {
@@ -66,6 +73,24 @@ export function NotificationBell() {
     }
   };
 
+  const handleBellButtonClick = () => {
+    if (bellTapTimerRef.current) clearTimeout(bellTapTimerRef.current);
+    bellTapCountRef.current += 1;
+    bellTapTimerRef.current = setTimeout(() => {
+      bellTapCountRef.current = 0;
+    }, BELL_TAP_WINDOW_MS);
+
+    if (bellTapCountRef.current >= BELL_TAPS_FOR_EASTER_EGG) {
+      bellTapCountRef.current = 0;
+      if (bellTapTimerRef.current) clearTimeout(bellTapTimerRef.current);
+      setIsOpen(false);
+      setPexesoOpen(true);
+      return;
+    }
+
+    setIsOpen((o) => !o);
+  };
+
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -79,7 +104,12 @@ export function NotificationBell() {
 
   return (
     <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+      <button
+        type="button"
+        onClick={handleBellButtonClick}
+        className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
+        aria-label="Upozornění"
+      >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center border-2 border-[#111]">
@@ -87,6 +117,8 @@ export function NotificationBell() {
           </span>
         )}
       </button>
+
+      <PexesoMemoryGame open={pexesoOpen} onClose={() => setPexesoOpen(false)} />
 
       {isOpen && (
         <>
