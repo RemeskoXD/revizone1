@@ -10,10 +10,13 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
-    "start": "node .next/standalone/server.js",
+    "start": "cross-env HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "start:next": "next start",
     "lint": "eslint .",
-    "clean": "next clean"
+    "clean": "next clean",
+    "db:push": "prisma db push",
+    "db:drift": "prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script",
+    "db:baseline-resolve": "node scripts/prisma-baseline-resolve.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
@@ -23,6 +26,7 @@
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cross-env": "^7.0.3",
     "lucide-react": "^0.553.0",
     "motion": "^12.38.0",
     "next": "^16.2.4",
