@@ -5,12 +5,11 @@ console.log("NEXTAUTH_URL overridden to:", process.env.NEXTAUTH_URL);
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },
+  /** Next 16: výchozí build používá Turbopack; prázdná konfigurace potvrdí záměr vedle vlastního `webpack` (dev HMR). */
+  turbopack: {},
   async headers() {
     const base = [
       { key: 'X-DNS-Prefetch-Control', value: 'on' },
