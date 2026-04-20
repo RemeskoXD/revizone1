@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getStripe } from '@/lib/stripe-client';
-import { getAppBaseUrl, isStripePaymentsConfigured, resolveStripeSettingsReturnPath } from '@/lib/stripe-config';
+import {
+  getAppBaseUrl,
+  isFakePaymentGatewayEnabled,
+  isStripePaymentsConfigured,
+  resolveStripeSettingsReturnPath,
+} from '@/lib/stripe-config';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +32,13 @@ export async function POST(request: Request) {
       /* prázdné tělo */
     }
 
+    const base = getAppBaseUrl();
+
+    if (isFakePaymentGatewayEnabled()) {
+      const url = `${base}/platba-test?rp=${encodeURIComponent(returnPath)}&m=checkout`;
+      return NextResponse.json({ url, fake: true as const });
+    }
+
     if (!isStripePaymentsConfigured()) {
       return NextResponse.json(
         { message: 'Platby Stripe nejsou nakonfigurovány (STRIPE_SECRET_KEY, STRIPE_PRICE_ID).' },
@@ -43,7 +55,6 @@ export async function POST(request: Request) {
     }
 
     const priceId = process.env.STRIPE_PRICE_ID!.trim();
-    const base = getAppBaseUrl();
     const userId = session.user.id;
     const email = session.user.email?.trim() || undefined;
 

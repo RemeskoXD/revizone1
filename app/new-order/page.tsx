@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import SubscriptionPricingBanner from "@/components/marketing/SubscriptionPricingBanner";
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -71,6 +72,10 @@ export default function NewOrderPage() {
                 <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Nová objednávka revize</h1>
                 <p className="mt-1 text-sm text-gray-400">Vyplňte formulář pro objednání nové revize</p>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <SubscriptionPricingBanner />
             </div>
 
             {success ? (

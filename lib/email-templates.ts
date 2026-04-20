@@ -269,7 +269,7 @@ export function registrationApprovedEmail(params: {
     <p style="color:#999;font-size:14px;margin:0 0 16px">Dobrý den${params.name ? `, ${params.name}` : ''},</p>
     <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 16px">
       Vaše registrace jako <strong style="color:#fff">${params.roleLabel}</strong> byla administrátorem <strong style="color:#facc15">schválena</strong>.
-      Nyní se můžete přihlásit a používat plně funkce účtu.
+      Po přihlášení prosím v aplikaci dokončete roční předplatné (první měsíc od registrace máte zdarma).
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#111;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin:0 0 24px">
       <tr><td style="padding:16px 20px">
@@ -283,7 +283,7 @@ export function registrationApprovedEmail(params: {
   return {
     subject: 'Revizone – registrace schválena',
     html,
-    text: `Registrace jako ${params.roleLabel} byla schválena. Platnost oprávnění k revizím do ${params.validUntilLabel}. Přihlášení: ${loginUrl}`,
+    text: `Registrace jako ${params.roleLabel} byla schválena. Po přihlášení dokončete roční předplatné v aplikaci. Platnost oprávnění k revizím do ${params.validUntilLabel}. Přihlášení: ${loginUrl}`,
   };
 }
 

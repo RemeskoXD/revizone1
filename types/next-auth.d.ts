@@ -9,6 +9,8 @@ declare module "next-auth" {
       blocked?: boolean
       /** Technik/firma – platnost oprávnění k revizím vypršela. */
       revisionAuthExpired?: boolean
+      /** Zákazník po registraci / technik či firma po schválení – čeká na první úhradu ročního předplatného. */
+      requiresSubscriptionCheckout?: boolean
     } & DefaultSession["user"]
   }
 

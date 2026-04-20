@@ -3,7 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getStripe } from '@/lib/stripe-client';
-import { getAppBaseUrl, isStripePaymentsConfigured, resolveStripeSettingsReturnPath } from '@/lib/stripe-config';
+import {
+  getAppBaseUrl,
+  isFakePaymentGatewayEnabled,
+  isStripePaymentsConfigured,
+  resolveStripeSettingsReturnPath,
+} from '@/lib/stripe-config';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +28,12 @@ export async function POST(request: Request) {
       returnPath = resolveStripeSettingsReturnPath(body.returnPath);
     } catch {
       /* prázdné tělo */
+    }
+
+    if (isFakePaymentGatewayEnabled()) {
+      const base = getAppBaseUrl();
+      const url = `${base}/platba-test?rp=${encodeURIComponent(returnPath)}&m=portal`;
+      return NextResponse.json({ url, fake: true as const });
     }
 
     if (!isStripePaymentsConfigured()) {

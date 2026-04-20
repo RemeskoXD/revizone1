@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { User as UserIcon, Lock, Bell, Save, UserX, X, ShieldCheck, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,10 +14,13 @@ const DISABLED_TABS = new Set(['security', 'notifications']);
 export default function SettingsClient({
   user,
   stripeConfigured,
+  stripeFakeMode = false,
 }: {
   user: User;
-  /** true pokud jsou nastavené STRIPE_SECRET_KEY + STRIPE_PRICE_ID */
+  /** true pokud Stripe klíče + cena, nebo zapnutý FAKE_PAYMENT_GATEWAY */
   stripeConfigured: boolean;
+  /** true = testovací brána /platba-test místo Stripe */
+  stripeFakeMode?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +37,7 @@ export default function SettingsClient({
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const router = useRouter();
   const pathname = usePathname() || '/dashboard/settings';
+  const stripeOnboardingKickoff = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -52,7 +56,7 @@ export default function SettingsClient({
     }
   }, [router, pathname]);
 
-  const startCheckout = async () => {
+  const startCheckout = useCallback(async () => {
     setStripeLoading('checkout');
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -69,7 +73,16 @@ export default function SettingsClient({
     } finally {
       setStripeLoading(null);
     }
-  };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (stripeFakeMode || !stripeConfigured) return;
+    if (!user.requiresSubscriptionCheckout) return;
+    if (stripeOnboardingKickoff.current) return;
+    stripeOnboardingKickoff.current = true;
+    setActiveTab('billing');
+    void startCheckout();
+  }, [stripeFakeMode, stripeConfigured, user.requiresSubscriptionCheckout, startCheckout]);
 
   const openPortal = async () => {
     setStripeLoading('portal');
@@ -349,7 +362,7 @@ export default function SettingsClient({
                       <p className="text-xs text-amber-200/85">
                         Online platby nejsou na tomto prostředí aktivní. Po nasazení Stripe zde bude odkaz do portálu.
                       </p>
-                    ) : user.stripeCustomerId ? (
+                    ) : user.stripeCustomerId || stripeFakeMode ? (
                       <button
                         type="button"
                         onClick={openPortal}
@@ -361,7 +374,7 @@ export default function SettingsClient({
                         ) : (
                           <CreditCard className="h-4 w-4" />
                         )}
-                        Otevřít správu předplatného ve Stripe
+                        {stripeFakeMode ? 'Otevřít testovací portál' : 'Otevřít správu předplatného ve Stripe'}
                       </button>
                     ) : (
                       <div className="space-y-3">
@@ -448,9 +461,18 @@ export default function SettingsClient({
                   <div>
                     <h2 className="text-lg font-semibold text-white">Platby a licence Revizone</h2>
                     <p className="mt-1 text-sm text-gray-400">
-                      Předplatné přes Stripe. Po úspěšné platbě se platnost licence doplní automaticky (webhook).
+                      {stripeFakeMode
+                        ? 'Testovací režim: místo Stripe se zobrazí falešná brána s tlačítkem Pokračovat. Licence v DB se nemění, dokud neproběhne skutečná platba / webhook.'
+                        : 'Předplatné přes Stripe. Po úspěšné platbě se platnost licence doplní automaticky (webhook).'}
                     </p>
                   </div>
+
+                  {stripeFakeMode && (
+                    <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100">
+                      Zapnuto <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">FAKE_PAYMENT_GATEWAY</code> – jen
+                      pro vývoj nebo demo. Na produkci vypněte.
+                    </div>
+                  )}
 
                   {!stripeConfigured ? (
                     <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-100">
@@ -492,14 +514,18 @@ export default function SettingsClient({
                         <button
                           type="button"
                           onClick={openPortal}
-                          disabled={stripeLoading !== null || !user.stripeCustomerId}
+                          disabled={stripeLoading !== null || (!user.stripeCustomerId && !stripeFakeMode)}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/5 disabled:opacity-40"
-                          title={!user.stripeCustomerId ? 'Nejdřív dokončete první platbu přes Stripe.' : undefined}
+                          title={
+                            !user.stripeCustomerId && !stripeFakeMode
+                              ? 'Nejdřív dokončete první platbu přes Stripe.'
+                              : undefined
+                          }
                         >
                           {stripeLoading === 'portal' ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : null}
-                          Faktury a platební metoda (Stripe)
+                          {stripeFakeMode ? 'Testovací portál (falešný)' : 'Faktury a platební metoda (Stripe)'}
                         </button>
                       </div>
                     </>

@@ -38,6 +38,8 @@ model User {
   stripeCustomerId     String?   @unique
   lastStripePaymentAt  DateTime?
   licenseValidUntil    DateTime?
+  /// Po registraci (zákazník) nebo po schválení adminem (technik/firma): dokončit první roční úhradu v aplikaci.
+  requiresSubscriptionCheckout Boolean @default(false)
   /// Platnost oprávnění vykonávat revize (technik / firma); nastavuje administrátor při schválení nebo později.
   revisionAuthValidUntil DateTime?
 

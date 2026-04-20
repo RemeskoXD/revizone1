@@ -9,6 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { getOrderTotalPrice, getBasePriceForServiceTypeId, URGENT_SURCHARGE_CZK, formatPriceCzk } from '@/lib/order-pricing';
 import Link from 'next/link';
+import SubscriptionPricingBanner from '@/components/marketing/SubscriptionPricingBanner';
 import { motion, AnimatePresence } from 'motion/react';
 
 const SERVICE_TYPES = [
@@ -167,6 +168,10 @@ export default function NewOrderPage() {
           <h1 className="text-xl font-bold text-white sm:text-2xl">Nová objednávka revize</h1>
           <p className="text-sm text-gray-400 sm:text-base">Vyplňte údaje o požadované revizi.</p>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <SubscriptionPricingBanner />
       </div>
 
       {/* Progress */}

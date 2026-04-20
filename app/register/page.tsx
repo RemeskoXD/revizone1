@@ -14,6 +14,8 @@ import {
   User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { signIn } from "next-auth/react";
+import { SUBSCRIPTION_PLANS } from "@/lib/subscription-pricing";
 
 type Package = {
   id: string;
@@ -23,6 +25,7 @@ type Package = {
   description: string;
   benefits: string[];
   color: string;
+  yearlyPriceCzk: number;
 };
 
 const packages: Package[] = [
@@ -30,6 +33,7 @@ const packages: Package[] = [
     id: "customer",
     role: "CUSTOMER",
     title: "Zákazník",
+    yearlyPriceCzk: SUBSCRIPTION_PLANS.CUSTOMER.yearlyPriceCzk,
     icon: <User className="w-7 h-7" />,
     description: "Pro majitele rodinných domů",
     benefits: [
@@ -45,6 +49,7 @@ const packages: Package[] = [
     id: "technician",
     role: "TECHNICIAN",
     title: "Technik",
+    yearlyPriceCzk: SUBSCRIPTION_PLANS.TECHNICIAN.yearlyPriceCzk,
     icon: <Wrench className="w-7 h-7" />,
     description: "Pro certifikované revizní techniky",
     benefits: [
@@ -60,6 +65,7 @@ const packages: Package[] = [
     id: "company",
     role: "COMPANY_ADMIN",
     title: "Firma",
+    yearlyPriceCzk: SUBSCRIPTION_PLANS.COMPANY_ADMIN.yearlyPriceCzk,
     icon: <Building2 className="w-7 h-7" />,
     description: "Pro firmy s více techniky",
     benefits: [
@@ -213,6 +219,22 @@ function RegisterForm() {
       if (res.ok) {
         if (data.user?.pendingApproval) {
           setDonePending(true);
+        } else if (role === "CUSTOMER") {
+          const redirectTo =
+            typeof data.postRegisterRedirect === "string" && data.postRegisterRedirect.startsWith("/")
+              ? data.postRegisterRedirect
+              : "/dashboard";
+          const signed = await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+          });
+          if (signed?.ok) {
+            router.push(redirectTo);
+            router.refresh();
+          } else {
+            router.push(`/login?callbackUrl=${encodeURIComponent(redirectTo)}`);
+          }
         } else {
           router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
@@ -258,7 +280,8 @@ function RegisterForm() {
               Vytvořte si účet
             </h1>
             <p className="text-gray-400 text-center text-sm mb-8 sm:mb-10 px-1">
-              Vyberte typ účtu – u technika a firmy je registrace s ověřením oprávnění
+              Vyberte typ účtu – 1. měsíc zdarma, poté roční předplatné. U technika a firmy je registrace s ověřením
+              oprávnění.
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
@@ -282,6 +305,11 @@ function RegisterForm() {
                     {pkg.title}
                   </h2>
                   <p className="text-gray-400 text-sm mb-5">{pkg.description}</p>
+
+                  <p className="mb-4 text-sm font-medium text-white">
+                    {pkg.yearlyPriceCzk.toLocaleString("cs-CZ")} Kč / rok
+                    <span className="ml-2 text-xs font-normal text-brand-yellow">1. měsíc zdarma</span>
+                  </p>
 
                   <ul className="space-y-2.5 mb-6">
                     {pkg.benefits.map((benefit) => (
@@ -356,9 +384,9 @@ function RegisterForm() {
             </h1>
             <p className="text-gray-400 text-center text-sm mb-8">
               {donePending
-                ? "Po schválení administrátorem vám přijde e-mail a poté se budete moci přihlásit."
+                ? "Po schválení administrátorem vám přijde e-mail. Po přihlášení dokončíte roční předplatné (testovací platba)."
                 : role === "CUSTOMER"
-                  ? "Vyplňte údaje – účet vznikne ihned."
+                  ? "Vyplňte údaje – účet vznikne ihned, poté přejdete k předplatnému."
                   : "Vyplňte údaje a nahrajte oprávnění. Účet se aktivuje po schválení."}
             </p>
 

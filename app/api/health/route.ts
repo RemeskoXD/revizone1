@@ -75,7 +75,7 @@ export async function GET(req: Request) {
   const tableChecks: { table: string; requiredColumns: string[] }[] = [
     {
       table: 'User',
-      requiredColumns: ['id', 'name', 'email', 'emailVerified', 'password', 'phone', 'role', 'bannedAt', 'isDeleted', 'priority', 'emailNotifications', 'accountStatus', 'ico', 'address', 'licenseDocument', 'licenseMimeType', 'expectedTechnicians', 'pendingCompanyInviteCode', 'stripeCustomerId', 'lastStripePaymentAt', 'licenseValidUntil', 'revisionAuthValidUntil', 'companyId', 'inviteCode', 'commissionRate', 'createdAt', 'updatedAt'],
+      requiredColumns: ['id', 'name', 'email', 'emailVerified', 'password', 'phone', 'role', 'bannedAt', 'isDeleted', 'priority', 'emailNotifications', 'accountStatus', 'ico', 'address', 'licenseDocument', 'licenseMimeType', 'expectedTechnicians', 'pendingCompanyInviteCode', 'stripeCustomerId', 'lastStripePaymentAt', 'licenseValidUntil', 'requiresSubscriptionCheckout', 'revisionAuthValidUntil', 'companyId', 'inviteCode', 'commissionRate', 'createdAt', 'updatedAt'],
     },
     {
       table: 'Order',

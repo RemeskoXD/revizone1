@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { isStripePaymentsConfigured } from '@/lib/stripe-config';
+import { isCheckoutAvailable, isFakePaymentGatewayEnabled } from '@/lib/stripe-config';
 import SettingsClient from '@/app/dashboard/settings/SettingsClient';
 
 export default async function CompanySettingsPage() {
@@ -20,5 +20,11 @@ export default async function CompanySettingsPage() {
     redirect('/login');
   }
 
-  return <SettingsClient user={user} stripeConfigured={isStripePaymentsConfigured()} />;
+  return (
+    <SettingsClient
+      user={user}
+      stripeConfigured={isCheckoutAvailable()}
+      stripeFakeMode={isFakePaymentGatewayEnabled()}
+    />
+  );
 }

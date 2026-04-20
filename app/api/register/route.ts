@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { readJsonBody, PayloadTooLargeError } from "@/lib/json-body";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { trialEndFromRegistration } from "@/lib/subscription-pricing";
+import {
+  buildPlatbaTestOnboardingUrl,
+  isFakePaymentGatewayEnabled,
+  isStripePaymentsConfigured,
+} from "@/lib/stripe-config";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LICENSE_B64 = 5_500_000; // ~4 MB binary
@@ -129,6 +135,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Zadejte adresu" }, { status: 400 });
       }
 
+      const trialUntil = trialEndFromRegistration(new Date());
       const user = await prisma.user.create({
         data: {
           name: nameTrim,
@@ -138,14 +145,24 @@ export async function POST(req: Request) {
           accountStatus: "ACTIVE",
           phone: phone || null,
           address: address || null,
+          licenseValidUntil: trialUntil,
+          requiresSubscriptionCheckout: true,
         },
         select: { id: true, email: true, role: true },
       });
 
+      let postRegisterRedirect: string | null = null;
+      if (isFakePaymentGatewayEnabled()) {
+        postRegisterRedirect = buildPlatbaTestOnboardingUrl("/dashboard/settings");
+      } else if (isStripePaymentsConfigured()) {
+        postRegisterRedirect = "/dashboard";
+      }
+
       return NextResponse.json(
         {
-          message: "Účet byl vytvořen. Můžete se přihlásit.",
+          message: "Účet byl vytvořen. Dokončete prosím předplatné.",
           user: { id: user.id, email: user.email, role: user.role },
+          postRegisterRedirect,
         },
         { status: 201 }
       );
@@ -179,6 +196,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Zadejte adresu" }, { status: 400 });
       }
 
+      const trialUntil = trialEndFromRegistration(new Date());
       const user = await prisma.user.create({
         data: {
           name: nameTrim,
@@ -192,6 +210,8 @@ export async function POST(req: Request) {
           licenseDocument: licTech!.base64,
           licenseMimeType: licTech!.mime,
           pendingCompanyInviteCode: companyInviteCode || null,
+          licenseValidUntil: trialUntil,
+          requiresSubscriptionCheckout: false,
         },
         select: { id: true, email: true, role: true },
       });
@@ -233,6 +253,7 @@ export async function POST(req: Request) {
         exp = Math.max(0, Math.min(5000, Math.floor(Number(expectedTechnicians))));
       }
 
+      const trialUntil = trialEndFromRegistration(new Date());
       const user = await prisma.user.create({
         data: {
           name: nameTrim,
@@ -247,6 +268,8 @@ export async function POST(req: Request) {
           licenseMimeType: licTech!.mime,
           pendingCompanyInviteCode: companyInviteCode || null,
           expectedTechnicians: exp,
+          licenseValidUntil: trialUntil,
+          requiresSubscriptionCheckout: false,
         },
         select: { id: true, email: true, role: true },
       });

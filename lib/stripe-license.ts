@@ -31,6 +31,7 @@ export async function applyLicenseAfterPayment(params: ApplyLicenseParams) {
     data: {
       lastStripePaymentAt: paidAt,
       licenseValidUntil,
+      requiresSubscriptionCheckout: false,
       ...(stripeCustomerId ? { stripeCustomerId } : {}),
     },
   });

@@ -145,6 +145,7 @@ export const authOptions: NextAuthOptions = {
               email: true,
               bannedAt: true,
               revisionAuthValidUntil: true,
+              requiresSubscriptionCheckout: true,
             },
           });
           if (!row || row.bannedAt) {
@@ -163,6 +164,8 @@ export const authOptions: NextAuthOptions = {
             return session;
           }
           session.user.revisionAuthExpired = false;
+          session.user.requiresSubscriptionCheckout =
+            row.requiresSubscriptionCheckout === true;
         } catch {
           session.user.id = token.id as string;
           session.user.role = token.role as string;
