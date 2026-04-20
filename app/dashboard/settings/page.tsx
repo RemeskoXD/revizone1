@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { isCheckoutAvailable, isFakePaymentGatewayEnabled } from '@/lib/stripe-config';
+import SettingsDbError from '@/components/settings/SettingsDbError';
 import SettingsClient from './SettingsClient';
 
 export default async function SettingsPage() {
@@ -12,9 +13,19 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-  });
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+  } catch (e) {
+    console.error('SettingsPage: prisma.user.findUnique', e);
+    return (
+      <SettingsDbError
+        message={e instanceof Error ? e.message : String(e)}
+      />
+    );
+  }
 
   if (!user) {
     redirect('/login');
