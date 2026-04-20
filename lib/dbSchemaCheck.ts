@@ -2,9 +2,18 @@ import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 
+export type ExpectedColumn = {
+  name: string;
+  prismaType: string;
+  isOptional: boolean;
+  hasLongText?: boolean;
+  hasText?: boolean;
+  varcharLength?: number;
+};
+
 type ExpectedModel = {
   name: string;
-  columns: { name: string; prismaType: string; isOptional: boolean; hasLongText?: boolean; hasText?: boolean }[];
+  columns: ExpectedColumn[];
 };
 
 const SCALAR_TYPES = new Set([
@@ -66,12 +75,14 @@ function parsePrismaSchema(schemaText: string): ExpectedModel[] {
 
       if (!SCALAR_TYPES.has(baseType)) continue;
 
+      const varcharM = rest.match(/@db\.VarChar\((\d+)\)/);
       current.columns.push({
         name: fieldName,
         prismaType: baseType,
         isOptional,
         hasLongText: rest.includes("@db.LongText"),
         hasText: rest.includes("@db.Text"),
+        varcharLength: varcharM ? parseInt(varcharM[1], 10) : undefined,
       });
     }
   }
@@ -79,13 +90,104 @@ function parsePrismaSchema(schemaText: string): ExpectedModel[] {
   return models;
 }
 
+const SYSTEM_TABLES_LOWER = new Set([
+  "_prisma_migrations",
+]);
+
+function mysqlTypeSql(col: ExpectedColumn): string {
+  if (col.hasLongText) return "LONGTEXT";
+  if (col.hasText) return "TEXT";
+  if (col.prismaType === "String") {
+    const n = col.varcharLength ?? 191;
+    return `VARCHAR(${n})`;
+  }
+  if (col.prismaType === "Boolean") return "BOOLEAN";
+  if (col.prismaType === "Int") return "INT";
+  if (col.prismaType === "Float") return "DOUBLE";
+  if (col.prismaType === "DateTime") return "DATETIME(3)";
+  if (col.prismaType === "Json") return "JSON";
+  if (col.prismaType === "BigInt") return "BIGINT";
+  return "TEXT";
+}
+
+/** Jednoduchý ALTER pro ruční doplnění – u složitých vztahů raději `prisma migrate deploy`. */
+export function buildAlterAddColumnStatements(
+  models: ExpectedModel[],
+  missingColumnsByTable: Record<string, string[]>
+): string[] {
+  const byName = new Map(models.map((m) => [m.name, m]));
+  const statements: string[] = [];
+  for (const [table, cols] of Object.entries(missingColumnsByTable)) {
+    const model = byName.get(table);
+    if (!model) continue;
+    for (const colName of cols) {
+      const col = model.columns.find((c) => c.name === colName);
+      if (!col) continue;
+      const typeSql = mysqlTypeSql(col);
+      const nullable = col.isOptional ? "NULL" : "NOT NULL";
+      let defaultSql = "";
+      if (col.prismaType === "Boolean" && !col.isOptional) {
+        defaultSql = " DEFAULT false";
+      }
+      statements.push(
+        `ALTER TABLE \`${table}\` ADD COLUMN \`${col.name}\` ${typeSql} ${nullable}${defaultSql};`
+      );
+    }
+  }
+  return statements;
+}
+
+export type MigrationSync = {
+  migrationsTableExists: boolean;
+  appliedMigrationNames: string[];
+  migrationFoldersOnDisk: string[];
+  pendingMigrations: string[];
+};
+
+export function readMigrationFolderNames(): string[] {
+  const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
+  if (!fs.existsSync(migrationsDir)) return [];
+  return fs
+    .readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith("."))
+    .map((d) => d.name)
+    .sort();
+}
+
+export async function checkPrismaMigrationsTable(): Promise<MigrationSync> {
+  const migrationFoldersOnDisk = readMigrationFolderNames();
+  let migrationsTableExists = false;
+  let appliedMigrationNames: string[] = [];
+  try {
+    const rows = (await prisma.$queryRaw<{ migration_name: string }[]>`
+      SELECT migration_name FROM _prisma_migrations ORDER BY finished_at ASC
+    `) as { migration_name: string }[];
+    migrationsTableExists = true;
+    appliedMigrationNames = rows.map((r) => r.migration_name);
+  } catch {
+    migrationsTableExists = false;
+  }
+  const appliedSet = new Set(appliedMigrationNames);
+  const pendingMigrations = migrationFoldersOnDisk.filter((name) => !appliedSet.has(name));
+  return {
+    migrationsTableExists,
+    appliedMigrationNames,
+    migrationFoldersOnDisk,
+    pendingMigrations,
+  };
+}
+
 export async function checkDatabaseSchema(): Promise<{
   databaseName: string | null;
   checkedAt: string;
   missingTables: string[];
   missingColumnsByTable: Record<string, string[]>;
+  extraColumnsByTable: Record<string, string[]>;
+  extraTablesInDb: string[];
   expectedModelsCount: number;
   existingTablesCount: number;
+  alterHints: string[];
+  migrationSync: MigrationSync;
 }> {
   const prismaSchemaPath = path.join(process.cwd(), "prisma", "schema.prisma");
   let schemaText: string;
@@ -108,8 +210,6 @@ export async function checkDatabaseSchema(): Promise<{
     throw new Error("Nelze zjistit aktuální databázi (DATABASE() je null).");
   }
 
-  const modelNames = expectedModels.map((m) => m.name);
-
   const columnsRows = (await prisma.$queryRaw<
     { TABLE_NAME: string; COLUMN_NAME: string }[]
   >`
@@ -121,7 +221,7 @@ export async function checkDatabaseSchema(): Promise<{
   const tablesRows = (await prisma.$queryRaw<{ TABLE_NAME: string }[]>`
     SELECT TABLE_NAME
     FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = ${databaseName}
+    WHERE TABLE_SCHEMA = ${databaseName} AND TABLE_TYPE = 'BASE TABLE'
   `) as { TABLE_NAME: string }[];
 
   const existingTablesSet = new Set(tablesRows.map((r) => r.TABLE_NAME.toLowerCase()));
@@ -135,6 +235,11 @@ export async function checkDatabaseSchema(): Promise<{
 
   const missingTables: string[] = [];
   const missingColumnsByTable: Record<string, string[]> = {};
+  const extraColumnsByTable: Record<string, string[]> = {};
+
+  const expectedTableNamesLower = new Set(
+    expectedModels.map((m) => m.name.toLowerCase())
+  );
 
   for (const model of expectedModels) {
     if (!existingTablesSet.has(model.name.toLowerCase())) {
@@ -144,6 +249,9 @@ export async function checkDatabaseSchema(): Promise<{
 
     const existingCols =
       existingColumnsByTable[model.name.toLowerCase()] ?? new Set<string>();
+    const expectedColNamesLower = new Set(
+      model.columns.map((c) => c.name.toLowerCase())
+    );
     const missingCols = model.columns
       .map((c) => c.name)
       .filter((col) => !existingCols.has(col.toLowerCase()));
@@ -151,15 +259,50 @@ export async function checkDatabaseSchema(): Promise<{
     if (missingCols.length > 0) {
       missingColumnsByTable[model.name] = missingCols;
     }
+
+    const extras: string[] = [];
+    for (const c of existingCols) {
+      if (!expectedColNamesLower.has(c)) {
+        const orig = columnsRows.find(
+          (row) =>
+            row.TABLE_NAME.toLowerCase() === model.name.toLowerCase() &&
+            row.COLUMN_NAME.toLowerCase() === c
+        );
+        if (orig) extras.push(orig.COLUMN_NAME);
+      }
+    }
+    if (extras.length > 0) {
+      extraColumnsByTable[model.name] = extras.sort();
+    }
   }
+
+  const extraTablesInDb: string[] = [];
+  for (const t of existingTablesSet) {
+    if (SYSTEM_TABLES_LOWER.has(t)) continue;
+    if (!expectedTableNamesLower.has(t)) {
+      const orig = tablesRows.find((row) => row.TABLE_NAME.toLowerCase() === t);
+      if (orig) extraTablesInDb.push(orig.TABLE_NAME);
+    }
+  }
+  extraTablesInDb.sort();
+
+  const migrationSync = await checkPrismaMigrationsTable();
+  const alterHints = buildAlterAddColumnStatements(
+    expectedModels,
+    missingColumnsByTable
+  );
 
   return {
     databaseName,
     checkedAt: new Date().toISOString(),
     missingTables,
     missingColumnsByTable,
+    extraColumnsByTable,
+    extraTablesInDb,
     expectedModelsCount: expectedModels.length,
     existingTablesCount: existingTablesSet.size,
+    alterHints,
+    migrationSync,
   };
 }
 

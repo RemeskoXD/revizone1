@@ -19,15 +19,33 @@ type MinimalResponse = {
   hint?: string;
 };
 
+type SchemaReport = {
+  databaseName: string | null;
+  checkedAt: string;
+  missingTables: string[];
+  missingColumnsByTable: Record<string, string[]>;
+  extraTablesInDb: string[];
+  extraColumnsByTable: Record<string, string[]>;
+  pendingMigrations: string[];
+  appliedMigrationsCount: number;
+  migrationsTableExists: boolean;
+  alterHintsSql: string[];
+  checklist: string[];
+};
+
 type DetailedResponse = {
   mode: 'detailed';
   results: CheckResult[];
   summary: { ok: number; error: number; missing: number };
+  schema: SchemaReport | null;
+  schemaLoadError?: string;
 };
 
 export default function HealthCheckPage() {
   const [results, setResults] = useState<CheckResult[]>([]);
   const [summary, setSummary] = useState<{ ok: number; error: number; missing: number } | null>(null);
+  const [schemaReport, setSchemaReport] = useState<SchemaReport | null>(null);
+  const [schemaLoadError, setSchemaLoadError] = useState<string | null>(null);
   const [minimal, setMinimal] = useState<MinimalResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCheck, setLastCheck] = useState<string | null>(null);
@@ -48,15 +66,22 @@ export default function HealthCheckPage() {
         setMinimal(data);
         setResults([]);
         setSummary(null);
+        setSchemaReport(null);
+        setSchemaLoadError(null);
       } else {
+        const d = data as DetailedResponse;
         setMinimal(null);
-        setResults(data.results ?? []);
-        setSummary(data.summary ?? null);
+        setResults(d.results ?? []);
+        setSummary(d.summary ?? null);
+        setSchemaReport(d.schema ?? null);
+        setSchemaLoadError(d.schemaLoadError ?? null);
       }
       setLastCheck(new Date().toLocaleString('cs-CZ'));
     } catch (e) {
       setResults([{ name: 'API Health', status: 'error', message: 'Nepodařilo se spojit s API', details: String(e) }]);
       setSummary({ ok: 0, error: 1, missing: 0 });
+      setSchemaReport(null);
+      setSchemaLoadError(null);
       setMinimal(null);
     } finally {
       setLoading(false);
@@ -130,6 +155,119 @@ export default function HealthCheckPage() {
               {minimal.message && <p className="text-sm text-red-300 mt-2">{minimal.message}</p>}
               {minimal.hint && <p className="text-xs text-gray-500 mt-3">{minimal.hint}</p>}
             </div>
+          </div>
+        )}
+
+        {schemaLoadError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <p className="font-semibold text-red-400">Chyba načtení schématu</p>
+            <pre className="mt-2 whitespace-pre-wrap font-mono text-xs opacity-90">{schemaLoadError}</pre>
+          </div>
+        )}
+
+        {schemaReport && (
+          <div className="space-y-4 rounded-xl border border-brand-yellow/25 bg-brand-yellow/5 p-5">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+              <Database className="h-5 w-5 text-brand-yellow" />
+              Co doplnit do databáze (vs. prisma/schema.prisma)
+            </h2>
+            <p className="text-xs text-gray-400">
+              Databáze: <strong className="text-gray-300">{schemaReport.databaseName ?? '—'}</strong>
+              {' · '}
+              Kontrola: {new Date(schemaReport.checkedAt).toLocaleString('cs-CZ')}
+              {' · '}
+              Migrace v DB:{' '}
+              {schemaReport.migrationsTableExists
+                ? `${schemaReport.appliedMigrationsCount} záznamů v _prisma_migrations`
+                : 'tabulka _prisma_migrations chybí'}
+            </p>
+
+            {schemaReport.pendingMigrations.length > 0 && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm font-semibold text-red-300">Neaplikované migrace (složky v repozitáři)</p>
+                <ul className="mt-2 list-inside list-disc text-sm text-red-200/90">
+                  {schemaReport.pendingMigrations.map((m) => (
+                    <li key={m} className="font-mono text-xs">
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-gray-400">
+                  Na serveru spusťte: <code className="rounded bg-black/40 px-1.5 py-0.5">npx prisma migrate deploy</code>
+                </p>
+              </div>
+            )}
+
+            {schemaReport.missingTables.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-amber-200">Chybějící tabulky</p>
+                <ul className="mt-1 list-inside list-disc text-sm text-gray-300">
+                  {schemaReport.missingTables.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {Object.keys(schemaReport.missingColumnsByTable).length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-amber-200">Chybějící sloupce</p>
+                <div className="mt-2 space-y-2 text-sm">
+                  {Object.entries(schemaReport.missingColumnsByTable).map(([table, cols]) => (
+                    <div key={table} className="rounded-lg bg-black/25 px-3 py-2">
+                      <span className="font-mono text-brand-yellow">{table}</span>
+                      <span className="text-gray-500"> — </span>
+                      <span className="text-gray-300">{cols.join(', ')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {schemaReport.alterHintsSql.length > 0 && (
+              <div>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-gray-200">Orientační SQL (ALTER) — raději použijte migrace</p>
+                  <button
+                    type="button"
+                    onClick={() => void navigator.clipboard.writeText(schemaReport.alterHintsSql.join('\n'))}
+                    className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/15"
+                  >
+                    Kopírovat SQL
+                  </button>
+                </div>
+                <pre className="max-h-64 overflow-auto rounded-lg border border-white/10 bg-[#0a0a0a] p-3 font-mono text-xs text-gray-300">
+                  {schemaReport.alterHintsSql.join('\n')}
+                </pre>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm font-semibold text-gray-200">Checklist (kroky)</p>
+              <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm text-gray-300">
+                {schemaReport.checklist.map((line, i) => (
+                  <li key={i} className="whitespace-pre-wrap pl-1">
+                    {line}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {(schemaReport.extraTablesInDb.length > 0 || Object.keys(schemaReport.extraColumnsByTable).length > 0) && (
+              <details className="text-sm text-gray-500">
+                <summary className="cursor-pointer text-gray-400 hover:text-gray-300">
+                  Navíc v databázi (není v Prisma modelu)
+                </summary>
+                {schemaReport.extraTablesInDb.length > 0 && (
+                  <p className="mt-2">Tabulky: {schemaReport.extraTablesInDb.join(', ')}</p>
+                )}
+                {Object.keys(schemaReport.extraColumnsByTable).length > 0 && (
+                  <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/30 p-2 text-xs">
+                    {JSON.stringify(schemaReport.extraColumnsByTable, null, 2)}
+                  </pre>
+                )}
+              </details>
+            )}
           </div>
         )}
 

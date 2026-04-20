@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { updateUserWithSubscriptionColumnFallback } from '@/lib/prisma-subscription-column';
 
 /**
  * Výpočet konce platnosti licence od data platby (např. měsíční / roční předplatné).
@@ -26,7 +26,7 @@ export async function applyLicenseAfterPayment(params: ApplyLicenseParams) {
   const { userId, paidAt, periodMonths, stripeCustomerId } = params;
   const licenseValidUntil = computeLicenseValidUntil(paidAt, periodMonths);
 
-  await prisma.user.update({
+  await updateUserWithSubscriptionColumnFallback({
     where: { id: userId },
     data: {
       lastStripePaymentAt: paidAt,

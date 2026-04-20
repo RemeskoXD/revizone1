@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
 import { buildPlatbaTestOnboardingUrl, isFakePaymentGatewayEnabled } from '@/lib/stripe-config';
+import { userRequiresSubscriptionOnboarding } from '@/lib/prisma-subscription-column';
 
 const ONBOARDING_ROLES = new Set(['CUSTOMER', 'TECHNICIAN', 'COMPANY_ADMIN']);
 
@@ -15,12 +15,8 @@ export async function redirectIfSubscriptionOnboardingRequired(
 ): Promise<void> {
   if (!ONBOARDING_ROLES.has(role)) return;
 
-  const row = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { requiresSubscriptionCheckout: true },
-  });
-
-  if (!row?.requiresSubscriptionCheckout) return;
+  const needsCheckout = await userRequiresSubscriptionOnboarding(userId);
+  if (!needsCheckout) return;
 
   const returnPath = subscriptionSettingsPathForRole(role);
 

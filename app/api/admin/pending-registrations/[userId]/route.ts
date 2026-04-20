@@ -7,6 +7,7 @@ import { readJsonBody, PayloadTooLargeError } from '@/lib/json-body';
 import { sendMail } from '@/lib/mail';
 import { registrationApprovedEmail, registrationRejectedEmail } from '@/lib/email-templates';
 import { parseRevisionAuthValidUntilDate } from '@/lib/revision-auth-core';
+import { updateUserWithSubscriptionColumnFallback } from '@/lib/prisma-subscription-column';
 
 export async function POST(
   req: Request,
@@ -89,7 +90,7 @@ export async function POST(
       return NextResponse.json({ message: 'Neplatné datum platnosti oprávnění.' }, { status: 400 });
     }
 
-    await prisma.user.update({
+    await updateUserWithSubscriptionColumnFallback({
       where: { id: user.id },
       data: {
         accountStatus: 'ACTIVE',

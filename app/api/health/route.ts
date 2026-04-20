@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkDatabaseSchema } from '@/lib/dbSchemaCheck';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,128 +73,178 @@ export async function GET(req: Request) {
     return NextResponse.json({ mode: 'detailed', results, summary: { ok: 0, error: 1, missing: 0 } }, { status: 503 });
   }
 
-  const tableChecks: { table: string; requiredColumns: string[] }[] = [
-    {
-      table: 'User',
-      requiredColumns: ['id', 'name', 'email', 'emailVerified', 'password', 'phone', 'role', 'bannedAt', 'isDeleted', 'priority', 'emailNotifications', 'accountStatus', 'ico', 'address', 'licenseDocument', 'licenseMimeType', 'expectedTechnicians', 'pendingCompanyInviteCode', 'stripeCustomerId', 'lastStripePaymentAt', 'licenseValidUntil', 'requiresSubscriptionCheckout', 'revisionAuthValidUntil', 'companyId', 'inviteCode', 'commissionRate', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'Order',
-      requiredColumns: ['id', 'readableId', 'isDeleted', 'customerId', 'technicianId', 'companyId', 'propertyId', 'revisionCategoryId', 'serviceType', 'propertyType', 'address', 'notes', 'status', 'assignedAt', 'isPublic', 'reportFile', 'price', 'isUrgent', 'preferredDate', 'scheduledDate', 'scheduledNote', 'confirmedAddress', 'revisionResult', 'revisionNotes', 'nextRevisionDate', 'completedAt', 'cancelToken', 'lastExpiryEmailDays', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'RoleRequest',
-      requiredColumns: ['id', 'userId', 'requestedRole', 'status', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'CompanyJoinRequest',
-      requiredColumns: ['id', 'technicianId', 'companyId', 'status', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'DocumentTransfer',
-      requiredColumns: ['id', 'senderId', 'receiverId', 'documentId', 'status', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'RevisionCategory',
-      requiredColumns: ['id', 'name', 'group', 'intervalMonths', 'legalBasis', 'description', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'Property',
-      requiredColumns: ['id', 'name', 'address', 'description', 'ownerId', 'transferToken', 'transferStatus', 'claimedById', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'ActivityLog',
-      requiredColumns: ['id', 'userId', 'action', 'details', 'targetId', 'createdAt'],
-    },
-    {
-      table: 'ChecklistItem',
-      requiredColumns: ['id', 'orderId', 'text', 'isCompleted', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'Message',
-      requiredColumns: ['id', 'orderId', 'senderId', 'content', 'createdAt'],
-    },
-    {
-      table: 'DefectTask',
-      requiredColumns: ['id', 'orderId', 'userId', 'title', 'description', 'status', 'priority', 'createdAt', 'updatedAt'],
-    },
-    {
-      table: 'ShareLink',
-      requiredColumns: ['id', 'token', 'userId', 'label', 'orderIds', 'expiresAt', 'isActive', 'viewCount', 'createdAt'],
-    },
-    {
-      table: 'SystemConfig',
-      requiredColumns: ['id', 'key', 'value', 'label', 'updatedAt'],
-    },
-    {
-      table: 'Notification',
-      requiredColumns: ['id', 'userId', 'type', 'title', 'message', 'link', 'isRead', 'createdAt'],
-    },
-    {
-      table: 'Review',
-      requiredColumns: ['id', 'orderId', 'customerId', 'technicianId', 'rating', 'comment', 'createdAt'],
-    },
-    {
-      table: 'OrderPhoto',
-      requiredColumns: ['id', 'orderId', 'imageData', 'caption', 'uploadedBy', 'createdAt'],
-    },
-    {
-      table: 'EmailLog',
-      requiredColumns: ['id', 'to', 'subject', 'type', 'status', 'messageId', 'error', 'orderId', 'userId', 'createdAt'],
-    },
-    {
-      table: 'StripeWebhookEvent',
-      requiredColumns: ['id', 'createdAt'],
-    },
-  ];
+  type SchemaPayload = {
+    databaseName: string | null;
+    checkedAt: string;
+    missingTables: string[];
+    missingColumnsByTable: Record<string, string[]>;
+    extraTablesInDb: string[];
+    extraColumnsByTable: Record<string, string[]>;
+    pendingMigrations: string[];
+    appliedMigrationsCount: number;
+    migrationsTableExists: boolean;
+    alterHintsSql: string[];
+    checklist: string[];
+  };
 
-  for (const check of tableChecks) {
-    try {
-      const columns: unknown[] = await prisma.$queryRawUnsafe(
-        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${check.table}'`
+  let schema: SchemaPayload | null = null;
+  let schemaLoadError: string | undefined;
+
+  try {
+    const report = await checkDatabaseSchema();
+    const missingColCount = Object.values(report.missingColumnsByTable).reduce(
+      (n, a) => n + a.length,
+      0
+    );
+    const checklist: string[] = [];
+    if (!report.migrationSync.migrationsTableExists) {
+      results.push({
+        name: 'Prisma: tabulka _prisma_migrations',
+        status: 'missing',
+        message: 'V databázi není evidence migrací',
+        details:
+          'Pravděpodobně nová DB. Spusťte alespoň jednou: npx prisma migrate deploy (nebo migrate dev lokálně).',
+      });
+      checklist.push('Spustit prisma migrate deploy – vytvoří se _prisma_migrations a tabulky ze složky prisma/migrations.');
+    } else if (report.migrationSync.pendingMigrations.length > 0) {
+      results.push({
+        name: 'Prisma: neaplikované migrace',
+        status: 'error',
+        message: `${report.migrationSync.pendingMigrations.length} migrací čeká na nasazení`,
+        details: report.migrationSync.pendingMigrations.join('\n'),
+      });
+      checklist.push(
+        `Na serveru spusťte: npx prisma migrate deploy\nČekající složky: ${report.migrationSync.pendingMigrations.join(', ')}`
       );
+    } else {
+      results.push({
+        name: 'Prisma: migrace',
+        status: 'ok',
+        message: `Všechny lokální migrace jsou v DB (${report.migrationSync.appliedMigrationNames.length})`,
+      });
+    }
 
-      if (columns.length === 0) {
-        results.push({
-          name: `Tabulka: ${check.table}`,
-          status: 'missing',
-          message: `Tabulka "${check.table}" NEEXISTUJE`,
-          details: `Vytvořte tabulku pomocí SQL z dokumentace.`,
-        });
-        continue;
-      }
+    for (const t of report.missingTables) {
+      results.push({
+        name: `Schéma: tabulka „${t}“`,
+        status: 'missing',
+        message: 'Tabulka z prisma/schema.prisma v MySQL chybí',
+        details: 'Oprava: prisma migrate deploy (nebo doplnění SQL z migrací).',
+      });
+    }
+    checklist.push(
+      ...report.missingTables.map(
+        (t) => `Doplnit tabulku „${t}“ (nejčastěji přes migraci / migrate deploy).`
+      )
+    );
 
-      const existingColumns = (columns as { COLUMN_NAME?: string; column_name?: string }[]).map(
-        (c) => c.COLUMN_NAME || c.column_name
+    for (const [table, cols] of Object.entries(report.missingColumnsByTable)) {
+      results.push({
+        name: `Schéma: sloupce „${table}“`,
+        status: 'error',
+        message: `Chybí ${cols.length} sloupců oproti prisma/schema.prisma`,
+        details: cols.join(', '),
+      });
+      checklist.push(`Tabulka ${table}: přidat sloupce: ${cols.join(', ')}.`);
+    }
+
+    if (report.alterHints.length > 0) {
+      results.push({
+        name: 'Návrh SQL (jen chybějící sloupce)',
+        status: 'missing',
+        message:
+          'Minimální ALTER – ověřte typy a indexy; spolehlivější je vždy hotová migrace z repa.',
+        details: report.alterHints.join('\n'),
+      });
+      checklist.push(
+        'Preferujte `npx prisma migrate deploy`. ALTER výše je orientační pro ruční doplnění.'
       );
-      const missingColumns = check.requiredColumns.filter((col) => !existingColumns.includes(col));
+    }
 
-      if (missingColumns.length > 0) {
-        results.push({
-          name: `Tabulka: ${check.table}`,
-          status: 'error',
-          message: `Chybí ${missingColumns.length} sloupců`,
-          details: `Chybějící: ${missingColumns.join(', ')}`,
-        });
-      } else {
+    const extraColTotal = Object.values(report.extraColumnsByTable).reduce(
+      (s, a) => s + a.length,
+      0
+    );
+    if (report.extraTablesInDb.length > 0) {
+      results.push({
+        name: 'Tabulky navíc v databázi',
+        status: 'ok',
+        message: `${report.extraTablesInDb.length} tabulek není v prisma/schema.prisma`,
+        details: report.extraTablesInDb.join(', '),
+      });
+    }
+    if (extraColTotal > 0) {
+      results.push({
+        name: 'Sloupce navíc v databázi',
+        status: 'ok',
+        message: `${extraColTotal} sloupců navíc (mimo aktuální Prisma model)`,
+        details: JSON.stringify(report.extraColumnsByTable, null, 2),
+      });
+    }
+
+    const schemaOk =
+      report.missingTables.length === 0 &&
+      missingColCount === 0 &&
+      report.migrationSync.pendingMigrations.length === 0 &&
+      report.migrationSync.migrationsTableExists;
+
+    if (schemaOk) {
+      results.push({
+        name: 'Schéma vs. prisma/schema.prisma',
+        status: 'ok',
+        message: `Shoda – ${report.expectedModelsCount} modelů, databáze „${report.databaseName ?? '?'}“`,
+      });
+    }
+
+    for (const modelName of [
+      'User',
+      'Order',
+      'Notification',
+      'RevisionCategory',
+      'Property',
+    ]) {
+      if (report.missingTables.includes(modelName)) continue;
+      if (report.missingColumnsByTable[modelName]?.length) continue;
+      try {
         const rowCount: { cnt?: number | bigint }[] = await prisma.$queryRawUnsafe(
-          `SELECT COUNT(*) as cnt FROM \`${check.table}\``
+          `SELECT COUNT(*) as cnt FROM \`${modelName}\``
         );
         const count = Number(rowCount[0]?.cnt ?? 0);
         results.push({
-          name: `Tabulka: ${check.table}`,
+          name: `Řádky: ${modelName}`,
           status: 'ok',
-          message: `OK – ${existingColumns.length} sloupců, ${count} záznamů`,
+          message: `${count.toLocaleString('cs-CZ')} záznamů`,
         });
+      } catch {
+        /* ignore */
       }
-    } catch (e: unknown) {
-      results.push({
-        name: `Tabulka: ${check.table}`,
-        status: 'error',
-        message: `Chyba při kontrole`,
-        details: isProd ? undefined : e instanceof Error ? e.message?.slice(0, 200) : String(e).slice(0, 200),
-      });
     }
+
+    if (checklist.length === 0 && schemaOk) {
+      checklist.push('Žádné doplnění schématu není potřeba.');
+    }
+
+    schema = {
+      databaseName: report.databaseName,
+      checkedAt: report.checkedAt,
+      missingTables: report.missingTables,
+      missingColumnsByTable: report.missingColumnsByTable,
+      extraTablesInDb: report.extraTablesInDb,
+      extraColumnsByTable: report.extraColumnsByTable,
+      pendingMigrations: report.migrationSync.pendingMigrations,
+      appliedMigrationsCount: report.migrationSync.appliedMigrationNames.length,
+      migrationsTableExists: report.migrationSync.migrationsTableExists,
+      alterHintsSql: report.alterHints,
+      checklist,
+    };
+  } catch (e: unknown) {
+    schemaLoadError = e instanceof Error ? e.message : String(e);
+    results.push({
+      name: 'Kontrola schématu (prisma/schema.prisma)',
+      status: 'error',
+      message: 'Nepodařilo se porovnat DB se schématem',
+      details: isProd ? schemaLoadError?.slice(0, 300) : schemaLoadError,
+    });
   }
 
   try {
@@ -265,5 +316,11 @@ export async function GET(req: Request) {
     missing: results.filter((r) => r.status === 'missing').length,
   };
 
-  return NextResponse.json({ mode: 'detailed', results, summary });
+  return NextResponse.json({
+    mode: 'detailed',
+    results,
+    summary,
+    schema,
+    schemaLoadError,
+  });
 }

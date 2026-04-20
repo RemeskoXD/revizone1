@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { getNextAuthJwtSecret } from "./jwt-secret";
 import { isRevisionAuthExpired } from "./revision-auth-core";
+import { findUserForAuthSession } from "./prisma-subscription-column";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -136,18 +137,7 @@ export const authOptions: NextAuthOptions = {
       const sub = token.sub ?? token.id;
       if (session.user && typeof sub === "string") {
         try {
-          const row = await prisma.user.findUnique({
-            where: { id: sub },
-            select: {
-              id: true,
-              role: true,
-              name: true,
-              email: true,
-              bannedAt: true,
-              revisionAuthValidUntil: true,
-              requiresSubscriptionCheckout: true,
-            },
-          });
+          const row = await findUserForAuthSession(sub);
           if (!row || row.bannedAt) {
             session.user.id = (row?.id ?? sub) as string;
             session.user.role = (row?.role ?? token.role) as string;
@@ -161,6 +151,8 @@ export const authOptions: NextAuthOptions = {
           session.user.blocked = false;
           if (isRevisionAuthExpired(row.role, row.revisionAuthValidUntil)) {
             session.user.revisionAuthExpired = true;
+            session.user.requiresSubscriptionCheckout =
+              row.requiresSubscriptionCheckout === true;
             return session;
           }
           session.user.revisionAuthExpired = false;

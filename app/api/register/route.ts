@@ -10,6 +10,7 @@ import {
   isFakePaymentGatewayEnabled,
   isStripePaymentsConfigured,
 } from "@/lib/stripe-config";
+import { createUserWithSubscriptionColumnFallback } from "@/lib/prisma-subscription-column";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LICENSE_B64 = 5_500_000; // ~4 MB binary
@@ -136,7 +137,7 @@ export async function POST(req: Request) {
       }
 
       const trialUntil = trialEndFromRegistration(new Date());
-      const user = await prisma.user.create({
+      const user = await createUserWithSubscriptionColumnFallback({
         data: {
           name: nameTrim,
           email: emailNorm,
@@ -197,7 +198,7 @@ export async function POST(req: Request) {
       }
 
       const trialUntil = trialEndFromRegistration(new Date());
-      const user = await prisma.user.create({
+      const user = await createUserWithSubscriptionColumnFallback({
         data: {
           name: nameTrim,
           email: emailNorm,
@@ -254,7 +255,7 @@ export async function POST(req: Request) {
       }
 
       const trialUntil = trialEndFromRegistration(new Date());
-      const user = await prisma.user.create({
+      const user = await createUserWithSubscriptionColumnFallback({
         data: {
           name: nameTrim,
           email: emailNorm,
