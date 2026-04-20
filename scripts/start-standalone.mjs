@@ -2,7 +2,8 @@
  * Spustí `server.js` z `.next/standalone` se správným cwd (očekává zkopírované static/public).
  */
 import { spawn } from 'node:child_process';
-import { existsSync, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const root = process.cwd();
 const dir = join(root, '.next', 'standalone');
