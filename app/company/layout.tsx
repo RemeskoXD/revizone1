@@ -2,7 +2,6 @@ import { ReactNode } from 'react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { redirectIfSubscriptionOnboardingRequired } from '@/lib/subscription-guard';
 import Link from 'next/link';
 import { Briefcase, Users, FileText, DollarSign, Radio } from 'lucide-react';
 import { PageTransition } from '@/components/PageTransition';
@@ -13,8 +12,6 @@ import { SidebarFooterBlock } from '@/components/layout/SidebarFooterBlock';
 export default async function CompanyLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'COMPANY_ADMIN') redirect('/login');
-
-  await redirectIfSubscriptionOnboardingRequired(session.user.id, session.user.role);
 
   return (
     <div className="flex min-h-dvh bg-black text-white">

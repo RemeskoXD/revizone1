@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { User as UserIcon, Lock, Bell, Save, UserX, X, ShieldCheck, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,7 +37,6 @@ export default function SettingsClient({
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const router = useRouter();
   const pathname = usePathname() || '/dashboard/settings';
-  const stripeOnboardingKickoff = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -74,15 +73,6 @@ export default function SettingsClient({
       setStripeLoading(null);
     }
   }, [pathname]);
-
-  useEffect(() => {
-    if (stripeFakeMode || !stripeConfigured) return;
-    if (!user.requiresSubscriptionCheckout) return;
-    if (stripeOnboardingKickoff.current) return;
-    stripeOnboardingKickoff.current = true;
-    setActiveTab('billing');
-    void startCheckout();
-  }, [stripeFakeMode, stripeConfigured, user.requiresSubscriptionCheckout, startCheckout]);
 
   const openPortal = async () => {
     setStripeLoading('portal');

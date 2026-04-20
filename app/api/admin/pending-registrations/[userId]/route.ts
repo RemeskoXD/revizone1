@@ -96,7 +96,6 @@ export async function POST(
         accountStatus: 'ACTIVE',
         pendingCompanyInviteCode: null,
         revisionAuthValidUntil: untilParsed,
-        requiresSubscriptionCheckout: true,
         ...(newInviteCode ? { inviteCode: newInviteCode } : {}),
         ...(companyId ? { companyId } : {}),
       },

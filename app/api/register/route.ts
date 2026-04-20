@@ -147,21 +147,21 @@ export async function POST(req: Request) {
           phone: phone || null,
           address: address || null,
           licenseValidUntil: trialUntil,
-          requiresSubscriptionCheckout: true,
+          requiresSubscriptionCheckout: false,
         },
         select: { id: true, email: true, role: true },
       });
 
       let postRegisterRedirect: string | null = null;
       if (isFakePaymentGatewayEnabled()) {
-        postRegisterRedirect = buildPlatbaTestOnboardingUrl("/dashboard/settings");
+        postRegisterRedirect = "/dashboard/settings?tab=billing";
       } else if (isStripePaymentsConfigured()) {
         postRegisterRedirect = "/dashboard";
       }
 
       return NextResponse.json(
         {
-          message: "Účet byl vytvořen. Dokončete prosím předplatné.",
+          message: "Účet byl vytvořen.",
           user: { id: user.id, email: user.email, role: user.role },
           postRegisterRedirect,
         },
