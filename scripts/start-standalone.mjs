@@ -13,14 +13,18 @@ if (!existsSync(join(dir, 'server.js'))) {
   process.exit(1);
 }
 
-if (!process.env.HOSTNAME) {
-  process.env.HOSTNAME = '0.0.0.0';
-}
+// Docker/Coolify nastaví HOSTNAME na ID kontejneru → Next naslouchá jen na něm a proxy dostane 502.
+// Vždy přepíšeme na 0.0.0.0 jen pro child proces.
+const childEnv = {
+  ...process.env,
+  HOSTNAME: '0.0.0.0',
+  PORT: process.env.PORT || '3000',
+};
 
 const child = spawn(process.execPath, ['server.js'], {
   cwd: dir,
   stdio: 'inherit',
-  env: process.env,
+  env: childEnv,
 });
 
 child.on('exit', (code, signal) => {
