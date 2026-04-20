@@ -54,12 +54,12 @@ export function AdminSidebarClient({ isOpen, onClose }: AdminSidebarClientProps)
       />
 
       <div
-        className="relative z-50 shrink-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
+        className="relative z-50 shrink-0 self-stretch lg:flex lg:h-full lg:min-h-0 lg:flex-col"
         style={isLg ? ({ width: sidebarWidth } as React.CSSProperties) : undefined}
       >
         <div
           className={cn(
-            'relative flex h-full w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#111] transition-transform duration-300',
+            'relative flex h-full min-h-0 w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#111] transition-transform duration-300',
             'fixed inset-y-0 left-0 pt-[env(safe-area-inset-top)] lg:relative lg:w-full lg:max-w-none lg:pt-0',
             isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           )}
@@ -80,7 +80,7 @@ export function AdminSidebarClient({ isOpen, onClose }: AdminSidebarClientProps)
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-6">
             <div className="space-y-1">
               <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Správa</p>
               {filteredNavigation.map((item) => (
@@ -100,7 +100,9 @@ export function AdminSidebarClient({ isOpen, onClose }: AdminSidebarClientProps)
             </div>
           </div>
 
-          <SidebarFooterBlock settingsHref={role === 'ADMIN' ? '/admin/settings' : '/admin'} />
+          <div className="mt-auto shrink-0 pt-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <SidebarFooterBlock settingsHref={role === 'ADMIN' ? '/admin/settings' : '/admin'} />
+          </div>
         </div>
       </div>
     </>

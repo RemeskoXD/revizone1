@@ -13,7 +13,7 @@ export default function AdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-dvh min-h-0 overflow-hidden bg-[#0a0a0a]">
+    <div className="flex h-dvh min-h-0 overflow-hidden bg-[#0a0a0a]">
       <AdminSidebarClient isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

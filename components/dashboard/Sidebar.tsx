@@ -36,12 +36,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       />
 
       <div
-        className="relative z-50 shrink-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
+        className="relative z-50 shrink-0 self-stretch lg:flex lg:h-full lg:min-h-0 lg:flex-col"
         style={isLg ? ({ width: sidebarWidth } as React.CSSProperties) : undefined}
       >
         <div
           className={cn(
-            'relative flex h-full w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#1A1A1A] transition-transform duration-300',
+            'relative flex h-full min-h-0 w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#1A1A1A] transition-transform duration-300',
             'fixed inset-y-0 left-0 pt-[env(safe-area-inset-top)] lg:relative lg:w-full lg:max-w-none lg:pt-0',
             isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           )}
@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-6">
+          <div className="flex flex-1 min-h-0 flex-col gap-1 overflow-y-auto px-3 py-6">
             <div className="mb-2 px-3">
               <Link
                 href="/dashboard/new-order"
@@ -93,7 +93,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
-          <SidebarFooterBlock settingsHref="/dashboard/settings" />
+          <div className="mt-auto shrink-0 pt-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <SidebarFooterBlock settingsHref="/dashboard/settings" />
+          </div>
         </div>
       </div>
     </>
